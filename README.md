@@ -1,5 +1,9 @@
 # TLS Fingerprinting with JA3/JA3S
 
+> **Feeling lost / want the plain-English version first?** Read
+> [`SIMPLE_GUIDE.md`](SIMPLE_GUIDE.md) — one page, no jargon, tells you
+> what this does, what to run, and what to present.
+
 A passive TLS fingerprinting tool for a Computer Networks course project.
 It reads TLS handshake traffic from `.pcap` files, computes JA3 (client)
 and JA3S (server) fingerprints per the published Salesforce spec, and
@@ -152,6 +156,7 @@ non-headless browser capture, and (Linux-only) eBPF/XDP-based capture.
 
 ## Documentation Index
 
+- [`SIMPLE_GUIDE.md`](SIMPLE_GUIDE.md) — start here if anything feels too complicated
 - [`docs/BIG_PICTURE.md`](docs/BIG_PICTURE.md) — why this project, what's the catch, what came before/after JA3
 - [`docs/STUDY_GUIDE.md`](docs/STUDY_GUIDE.md) — CN/TLS/JA3 from zero
 - [`docs/SETUP_MAC.md`](docs/SETUP_MAC.md) — macOS setup, step by step
