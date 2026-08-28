@@ -1,0 +1,124 @@
+{
+  "fingerprints": [
+    {
+      "hash": "375c6162a492dfbf2795909110ce8424",
+      "fingerprint_type": "ja3",
+      "name": "curl 8.7.1 (macOS system, SecureTransport/LibreSSL)",
+      "category": "client",
+      "fingerprint_string": "771,4867-4866-4865-52393-52392-52394-49200-49196-49192-49188-49172-49162-159-107-57-65413-196-136-129-157-61-53-192-132-49199-49195-49191-49187-49171-49161-158-103-51-190-69-156-60-47-186-65-49169-49159-5-4-49170-49160-22-10-255,43-51-0-11-10-13-16,29-23-24-25,0",
+      "library": "SecureTransport backed by LibreSSL 3.3.6",
+      "source_type": "measured",
+      "source": "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/EXPERIMENTS.md)",
+      "command": "curl --connect-to example.com:443:127.0.0.1:8443 -sS https://example.com/",
+      "notes": "System /usr/bin/curl on macOS 26.5. Captured via the root-free capture_proxy.py relay, not a NIC tap."
+    },
+    {
+      "hash": "d75f9129bb5d05492a65ff78e081bcb2",
+      "fingerprint_type": "ja3s",
+      "name": "Cloudflare edge (fronting example.com)",
+      "category": "server",
+      "fingerprint_string": "771,4867,51-43",
+      "library": "unknown (Cloudflare does not publish its edge TLS stack)",
+      "source_type": "measured",
+      "source": "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/EXPERIMENTS.md)",
+      "command": "curl --connect-to example.com:443:127.0.0.1:8443 -sS https://example.com/",
+      "notes": "ServerHello observed in response to: curl 8.7.1 (macOS system, SecureTransport/LibreSSL)"
+    },
+    {
+      "hash": "0b85eb0d4981e69064e40753e4f0ac5f",
+      "fingerprint_type": "ja3",
+      "name": "openssl s_client 3.6.2 (Homebrew)",
+      "category": "client",
+      "fingerprint_string": "771,4866-4867-4865-49196-49200-159-52393-52392-52394-49195-49199-158-49188-49192-107-49187-49191-103-49162-49172-57-49161-49171-51-157-156-61-60-53-47,65281-0-11-10-35-22-23-13-43-45-51,4588-29-23-30-24-25-256-257,0",
+      "library": "OpenSSL 3.6.2",
+      "source_type": "measured",
+      "source": "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/EXPERIMENTS.md)",
+      "command": "openssl s_client -connect 127.0.0.1:8444 -servername example.com -brief < /dev/null",
+      "notes": "Homebrew-installed OpenSSL, not the macOS system LibreSSL. Captured via capture_proxy.py relay."
+    },
+    {
+      "hash": "907bf3ecef1c987c889946b737b43de8",
+      "fingerprint_type": "ja3s",
+      "name": "Cloudflare edge (fronting example.com)",
+      "category": "server",
+      "fingerprint_string": "771,4866,51-43",
+      "library": "unknown (Cloudflare does not publish its edge TLS stack)",
+      "source_type": "measured",
+      "source": "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/EXPERIMENTS.md)",
+      "command": "openssl s_client -connect 127.0.0.1:8444 -servername example.com -brief < /dev/null",
+      "notes": "ServerHello observed in response to: openssl s_client 3.6.2 (Homebrew)"
+    },
+    {
+      "hash": "f21f8e6cf70d5980ecfe9fa2e0ef401c",
+      "fingerprint_type": "ja3",
+      "name": "Python 3.14.6 stdlib ssl (ssl.create_default_context)",
+      "category": "client",
+      "fingerprint_string": "771,4866-4867-4865-49196-49200-49195-49199-52393-52392-49188-49192-49187-49191-159-158-107-103,65281-0-11-10-35-22-23-13-43-45-51,4588-29-23-30-24-25-256-257,0",
+      "library": "CPython ssl module, linked against OpenSSL 3.6.2 (Homebrew build)",
+      "source_type": "measured",
+      "source": "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/EXPERIMENTS.md)",
+      "command": "python experiments/python_client.py 127.0.0.1 8445 example.com",
+      "notes": "Same underlying OpenSSL version as the openssl.pcap entry, but a different JA3 -- the cipher list/order differs because ssl.create_default_context() curates its own suite list. Captured via capture_proxy.py relay."
+    },
+    {
+      "hash": "907bf3ecef1c987c889946b737b43de8",
+      "fingerprint_type": "ja3s",
+      "name": "Cloudflare edge (fronting example.com)",
+      "category": "server",
+      "fingerprint_string": "771,4866,51-43",
+      "library": "unknown (Cloudflare does not publish its edge TLS stack)",
+      "source_type": "measured",
+      "source": "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/EXPERIMENTS.md)",
+      "command": "python experiments/python_client.py 127.0.0.1 8445 example.com",
+      "notes": "ServerHello observed in response to: Python 3.14.6 stdlib ssl (ssl.create_default_context)"
+    },
+    {
+      "hash": "81a2542af8442fcd7802f178d9f2a626",
+      "fingerprint_type": "ja3",
+      "name": "Google Chrome 151.0.7922.174 (headless)",
+      "category": "client",
+      "fingerprint_string": "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,10-27-5-18-51-43-65281-16-11-45-17613-23-13-0-65037-35,4588-29-23-24,0",
+      "library": "BoringSSL (Chromium's TLS stack)",
+      "source_type": "measured",
+      "source": "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/EXPERIMENTS.md)",
+      "command": "Google Chrome --headless=new --proxy-server=127.0.0.1:8446 --dump-dom https://example.com/",
+      "notes": "Headless Chrome driven through capture_proxy.py's HTTP CONNECT relay mode so it needed no OS-level proxy config."
+    },
+    {
+      "hash": "eb1d94daa7e0344597e756a1fb6e7054",
+      "fingerprint_type": "ja3s",
+      "name": "Cloudflare edge (fronting example.com)",
+      "category": "server",
+      "fingerprint_string": "771,4865,51-43",
+      "library": "unknown (Cloudflare does not publish its edge TLS stack)",
+      "source_type": "measured",
+      "source": "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/EXPERIMENTS.md)",
+      "command": "Google Chrome --headless=new --proxy-server=127.0.0.1:8446 --dump-dom https://example.com/",
+      "notes": "ServerHello observed in response to: Google Chrome 151.0.7922.174 (headless)"
+    },
+    {
+      "hash": "c53113116bb0508ad66a61bbbe6fedc9",
+      "fingerprint_type": "ja3",
+      "name": "custom hand-built ClientHello (raw socket, no TLS library)",
+      "category": "client",
+      "fingerprint_string": "771,49199-49195-47-53,0-10-11-13,29-23,0",
+      "library": "None -- experiments/custom_client.py assembles the TLS record by hand",
+      "source_type": "measured",
+      "source": "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/EXPERIMENTS.md)",
+      "command": "python experiments/custom_client.py example.com 443 pcaps/custom_client.pcap",
+      "notes": "Deliberately legacy TLS 1.2, no supported_versions/key_share extensions. Connected directly to the real server, no relay needed since the script already controls every byte sent."
+    },
+    {
+      "hash": "ba02d4299a6e8c8482ecf2af07631993",
+      "fingerprint_type": "ja3s",
+      "name": "Cloudflare edge (fronting example.com)",
+      "category": "server",
+      "fingerprint_string": "771,49195,0-11",
+      "library": "unknown (Cloudflare does not publish its edge TLS stack)",
+      "source_type": "measured",
+      "source": "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/EXPERIMENTS.md)",
+      "command": "python experiments/custom_client.py example.com 443 pcaps/custom_client.pcap",
+      "notes": "ServerHello observed in response to: custom hand-built ClientHello (raw socket, no TLS library)"
+    }
+  ]
+}
