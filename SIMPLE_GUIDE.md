@@ -160,7 +160,8 @@ from encrypted traffic just by how they say hello."*
 ## Where to go next if you want more depth (optional, in order of depth)
 
 1. `docs/BIG_PICTURE.md` — why this matters, what's the catch, what came before/after this technique
-2. `docs/STUDY_GUIDE.md` — the actual networking concepts (IP, TCP, TLS...) from zero
-3. `docs/EXPERIMENTS.md` — exact commands + real output for all 5 recordings
-4. `docs/VIVA.md` — likely questions + short answers
-5. `docs/PROJECT_REPORT.md` — the formal write-up
+2. `docs/CODE_FLOW.md` — trace exactly which file runs when, for one real command, start to finish
+3. `docs/STUDY_GUIDE.md` — the actual networking concepts (IP, TCP, TLS...) from zero
+4. `docs/EXPERIMENTS.md` — exact commands + real output for all 5 recordings
+5. `docs/VIVA.md` — likely questions + short answers
+6. `docs/PROJECT_REPORT.md` — the formal write-up

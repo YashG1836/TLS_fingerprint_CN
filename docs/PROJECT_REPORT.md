@@ -1,8 +1,8 @@
 # Project Report: TLS Fingerprinting using JA3/JA3S
 
 **Course:** Computer Networks
-**Author:** `USER MUST VERIFY` (fill in your name/roll number)
-**Date:** `USER MUST VERIFY` (fill in submission date)
+**Author:** Yash Goyal 24110399
+**Date:** 27/08/2026 (submission date : 11/09/2026)
 
 ---
 
@@ -149,6 +149,25 @@ only variable. Full commands, raw output, and discussion for each are in
 4. Google Chrome 151 (headless, real browser binary)
 5. A hand-built ClientHello over a raw socket, no TLS library at all
 
+Two further experiments go beyond the base MVP requirement:
+
+6. **JA4 vs JA3 stability** — the same real Chrome install, run twice,
+   produced two different JA3 hashes (extension-order randomization,
+   caught live rather than assumed). Computing JA4 on the same two
+   captures showed its cipher-hash segment stayed byte-identical across
+   both runs, while its extension-count segment correctly changed from 16
+   to 17 because Chrome genuinely sent one additional extension the
+   second time. JA4 isolates *what* changed instead of collapsing
+   everything into one opaque, order-sensitive hash.
+7. **Bot/spoofing detection** — a script sends a real TLS handshake
+   (Python stdlib `ssl`, already fingerprinted in Experiment 3) while
+   claiming, via a spoofed HTTP `User-Agent` header, to be Chrome. A new
+   `check-spoofing` command compares the real measured JA3 against the
+   database's known hashes for the *claimed* identity and flags the
+   mismatch. A follow-up "bombardment" run (5 independent live
+   connections) showed detection holding at 5/5 regardless of request
+   volume.
+
 ## 7. Results
 
 | Client | TLS lib | TLS ver. | JA3 hash | JA3S hash |
@@ -159,14 +178,34 @@ only variable. Full commands, raw output, and discussion for each are in
 | Chrome 151 (headless) | BoringSSL | 1.3 | `81a2542af8442fcd7802f178d9f2a626` | `eb1d94daa7e0344597e756a1fb6e7054` |
 | Custom raw ClientHello | none | 1.2 | `c53113116bb0508ad66a61bbbe6fedc9` | `ba02d4299a6e8c8482ecf2af07631993` |
 
-All 36 automated tests pass (`pytest`): unit tests for JA3/JA3S string
-construction against hand-derived expected values, parser edge cases
-(truncated records, GREASE-only cipher lists, multi-record handshake
-messages, malformed extensions), database lookup semantics, report
-formatting, and one end-to-end integration test through a synthetic pcap.
-`USER MUST VERIFY` by re-running `pytest` locally if you want to confirm
-this independently — the exact count may have changed if this report is
-read after further edits.
+**JA4 vs JA3 stability (Experiment 6), same real Chrome, two runs:**
+
+| Run | JA3 | JA4 |
+|---|---|---|
+| First | `81a2542af8442fcd7802f178d9f2a626` | `t13d1516h2_8daaf6152771_806a8c22fdea` |
+| Second | `825cf36b22c9ab3e25a5bc094aecde86` | `t13d1517h2_8daaf6152771_cb7bf5808d99` |
+
+JA3 changed completely between runs. JA4's cipher-hash segment
+(`8daaf6152771`) is identical in both — the reordering-immunity JA4 was
+designed to provide, demonstrated on real, not synthetic, data.
+
+**Bot/spoofing detection (Experiment 7):** a script sending a real
+Python-`ssl` handshake while claiming to be Chrome (spoofed
+`User-Agent`) was correctly flagged: `check-spoofing` reported
+`MISMATCH -- SUSPICIOUS ... matches: Python 3.14.6 stdlib ssl`. A 5-request
+burst (`experiments/bombard_demo.py`) was flagged 5/5, each a
+genuinely separate live connection.
+
+All 56 automated tests pass (`pytest`): unit tests for JA3/JA3S string
+construction against hand-derived expected values, JA4 string
+construction against the *official FoxIO spec's own worked examples*
+(not just internal self-consistency), parser edge cases (truncated
+records, GREASE-only cipher lists, multi-record handshake messages,
+malformed extensions), database lookup semantics, spoofing-detector
+logic, report formatting, and one end-to-end integration test through a
+synthetic pcap. `USER MUST VERIFY` by re-running `pytest` locally if you
+want to confirm this independently — the exact count may have changed if
+this report is read after further edits.
 
 ## 8. Security Applications
 
@@ -183,6 +222,14 @@ read after further edits.
   specific than either fingerprint alone (see the Salesforce JA3
   publication for the original malware-C2 pairing use case this was
   designed for).
+- **Identity-claim verification (bot detection):** the most concrete
+  application this project demonstrates directly (Experiment 7) — an
+  `HTTP User-Agent` header is a string the client chooses, trivial to
+  fake; the TLS ClientHello it sent moments earlier is a structural
+  property of whatever library actually built it, much harder to fake
+  convincingly. Comparing the two catches automated clients
+  impersonating real browsers, which is exactly how production bot-
+  mitigation products use this technique.
 
 ## 9. Limitations
 
@@ -201,10 +248,15 @@ read after further edits.
   ClientHello extension *order* per connection specifically to weaken
   JA3 as a tracking mechanism — standard (order-sensitive) JA3, as
   implemented here per the published spec, can produce different hashes
-  for the *same* real browser install across connections. This was not
-  independently re-verified against multiple live Chrome connections in
-  this project (our Chrome experiment ran once, headless) —
-  `USER MUST VERIFY` if you want to confirm the variability directly.
+  for the *same* real browser install across connections. **This was
+  independently re-verified directly**, not just cited from
+  documentation: re-running the identical headless Chrome command a
+  second time (Experiment 6) produced a different JA3 hash for the same
+  real Chrome 151 install. Implementing JA4 alongside JA3 (originally
+  listed as future work below) let us isolate *why*: its cipher-hash
+  segment stayed identical across both runs while its extension-count
+  segment correctly changed, showing the instability was specifically in
+  extension handling, not a wholesale re-fingerprinting.
 - **Version/config drift.** The same tool can shift to a different JA3
   after a library upgrade or OS update; every database entry records the
   OS/date it was measured on for exactly this reason.
@@ -225,25 +277,37 @@ read after further edits.
 - **No confidentiality is broken anywhere in this project.** Only the
   unencrypted ClientHello/ServerHello preamble is read.
 
-## 10. Future Work (explicitly out of scope for this MVP)
+## 10. Future Work
 
-- **JA4/JA4S:** a newer fingerprinting scheme with additional detail
-  (e.g. explicit ALPN, cipher/extension counts) and partial
-  order-independence, addressing some of JA3's weaknesses discussed
-  above.
+**Done, originally listed here as a stretch goal:** JA4 (client) is now
+implemented and spec-verified (§6–7 above) — kept in this section's
+history to show the project's actual trajectory rather than rewriting it
+away.
+
+**Still genuinely out of scope:**
+
+- **JA4S/JA4H/JA4X/JA4SSH** (the rest of the JA4 family) and **JARM**
+  (active server fingerprinting) — this project only implemented client-
+  side JA4.
 - **Larger, more diverse reference database:** more OS versions, more
   tools (wget, Node.js, Go's `net/http`, mobile app stacks), and ideally
   contributions of `published_reference`-tagged entries from trustworthy
   external sources (with citations), which this project deliberately did
   not fabricate.
 - **Interactive/live browser capture** (real, non-headless browsing) to
-  directly verify the extension-order-randomization claim in §9.
+  see whether interactive Chrome shows the same run-to-run instability as
+  the headless captures in Experiment 6.
 - **eBPF/XDP-based high-performance capture** — Linux-only, and
   unnecessary at this traffic scale; explicitly excluded from the MVP
   per project scope.
 - **Live capture UX polish** (the `tls-fingerprint live` subcommand
   exists but requires `sudo` and was not part of this project's tested
   demonstration path).
+- **Reading the real HTTP `User-Agent`** rather than supplying it
+  out-of-band to `check-spoofing` — would require this project to
+  actually terminate TLS itself (act as a mock server/WAF), which was
+  deliberately avoided to keep "never decrypt anything" a hard rule
+  throughout.
 
 ## 11. Conclusion
 
@@ -259,3 +323,12 @@ traffic, never invented. The project also documents, rather than glosses
 over, the real limitations of hash-based TLS fingerprinting: ambiguous
 matches, GREASE, extension-order randomization, and version drift are all
 either demonstrated directly or explicitly flagged as a known gap.
+
+Beyond the base requirement, the project implements JA4 (spec-verified
+against FoxIO's own published worked examples) and uses it to explain,
+not just cite, why the same real Chrome install fingerprinted
+differently across two runs — and builds a working bot/spoofing
+detector on top of JA3 that catches a script lying about its identity
+via a spoofed `User-Agent`, holding at 5/5 detections under a burst of
+independent live connections. Both extensions were motivated directly by
+findings from the base experiments, not chosen arbitrarily.

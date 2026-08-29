@@ -14,6 +14,7 @@ from scapy.all import IP, IPv6, TCP, Raw, rdpcap
 from .database import FingerprintDatabase, MatchResult
 from .ja3 import JA3Result, compute_ja3
 from .ja3s import JA3SResult, compute_ja3s
+from .ja4 import JA4Result, compute_ja4
 from .parser import (
     ClientHelloInfo,
     ServerHelloInfo,
@@ -43,6 +44,8 @@ class FlowReport:
     ja3s: JA3SResult | None = None
     ja3_match: MatchResult | None = None
     ja3s_match: MatchResult | None = None
+    ja4: JA4Result | None = None
+    ja4_match: MatchResult | None = None
 
 
 def _canonical_key(ip1: str, port1: int, ip2: str, port2: int):
@@ -112,6 +115,9 @@ def analyze_packets(packets, db: FingerprintDatabase | None = None) -> list[Flow
         report.ja3 = compute_ja3(client_hello)
         if db is not None:
             report.ja3_match = db.lookup(report.ja3.ja3_hash, "ja3")
+        report.ja4 = compute_ja4(client_hello)
+        if db is not None:
+            report.ja4_match = db.lookup(report.ja4.ja4_string, "ja4")
 
         if server_hello is not None:
             report.ja3s = compute_ja3s(server_hello)

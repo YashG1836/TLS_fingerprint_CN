@@ -13,7 +13,7 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-VALID_FINGERPRINT_TYPES = {"ja3", "ja3s"}
+VALID_FINGERPRINT_TYPES = {"ja3", "ja3s", "ja4"}
 VALID_CATEGORIES = {"client", "server"}
 VALID_SOURCE_TYPES = {"measured", "published_reference"}
 

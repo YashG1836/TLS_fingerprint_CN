@@ -44,6 +44,26 @@ def ext_raw(ext_type: int, data: bytes = b"") -> bytes:
     return extension(ext_type, data)
 
 
+def ext_alpn(protocols: list[str]) -> bytes:
+    entries = b"".join(bytes([len(p.encode())]) + p.encode() for p in protocols)
+    data = u16(len(entries)) + entries
+    return extension(0x0010, data)
+
+
+def ext_supported_versions_client(versions: list[int]) -> bytes:
+    """ClientHello's supported_versions uses a 1-byte length prefix
+    (different from most other extensions, which use 2 bytes)."""
+    body = b"".join(u16(v) for v in versions)
+    data = bytes([len(body)]) + body
+    return extension(0x002B, data)
+
+
+def ext_signature_algorithms(algs: list[int]) -> bytes:
+    body = b"".join(u16(a) for a in algs)
+    data = u16(len(body)) + body
+    return extension(0x000D, data)
+
+
 def client_hello_record(
     version: int,
     ciphers: list[int],

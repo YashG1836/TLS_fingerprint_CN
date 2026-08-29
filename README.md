@@ -42,12 +42,21 @@ PCAP file --> Packet Parser --> ClientHello/ServerHello --> JA3/JA3S Generator
 | `src/tls_fingerprint/analyzer.py` | Orchestrates pcap → flows → hellos → JA3/JA3S → DB lookup |
 | `src/tls_fingerprint/cli.py` / `report.py` | Command-line interface + human-readable output |
 | `src/tls_fingerprint/capture_proxy.py` | Root-free relay used only to *generate* real experiment traffic |
+| `src/tls_fingerprint/ja4.py` | JA4 (client) — spec-verified against FoxIO's own worked examples |
+| `src/tls_fingerprint/spoofing_detector.py` | Flags a client whose claimed identity doesn't match its real TLS fingerprint |
 
 ## Features
 
 - Analyze any `.pcap`/`.pcapng` file — no elevated privileges needed
 - RFC-faithful JA3 and JA3S computation, including RFC 8701 GREASE
   stripping
+- **JA4** (client) alongside JA3 — spec-verified reorder-resistant
+  fingerprint; see `docs/EXPERIMENTS.md` Experiment 6 for a real
+  before/after where it stayed stable while JA3 didn't
+- **Bot/spoofing detection** (`check-spoofing`) — flags a client that
+  claims one identity (e.g. via `User-Agent`) while its real TLS
+  fingerprint matches something else entirely; see `docs/EXPERIMENTS.md`
+  Experiment 7
 - Local JSON reference database with `known` / `possible` (ambiguous) /
   `unknown` match reporting — never silently guesses
 - Text or JSON CLI output
@@ -122,6 +131,12 @@ distinct JA3 hashes**, including two clients sharing the exact same
 underlying crypto library. Exact commands, real command output, and
 discussion: [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md).
 
+Two further real experiments build on those five: a same-Chrome,
+two-runs comparison showing JA4 stayed stable where JA3 didn't, and a
+bot-detection demo where a script lying about being Chrome (via a
+spoofed `User-Agent`) gets caught — 5/5 flagged even under a burst of
+requests. See `docs/EXPERIMENTS.md` Experiments 6–7.
+
 Rebuild the reference database from the captured pcaps at any time:
 ```bash
 python experiments/build_reference_db.py
@@ -132,10 +147,11 @@ python experiments/build_reference_db.py
 ```bash
 pytest
 ```
-36 tests: JA3/JA3S string construction (checked against hand-derived
-expected values, not just re-checking the code against itself), parser
-edge cases, database lookup semantics, report formatting, and an
-end-to-end integration test through a synthetic pcap.
+56 tests: JA3/JA3S string construction (checked against hand-derived
+expected values), JA4 string construction (checked against the *official
+FoxIO spec's own worked examples*), parser edge cases, database lookup
+semantics, spoofing-detector logic, report formatting, and an end-to-end
+integration test through a synthetic pcap.
 
 ## Limitations
 
@@ -158,6 +174,7 @@ non-headless browser capture, and (Linux-only) eBPF/XDP-based capture.
 
 - [`SIMPLE_GUIDE.md`](SIMPLE_GUIDE.md) — start here if anything feels too complicated
 - [`docs/BIG_PICTURE.md`](docs/BIG_PICTURE.md) — why this project, what's the catch, what came before/after JA3
+- [`docs/CODE_FLOW.md`](docs/CODE_FLOW.md) — which file/function runs when, for one real command end to end
 - [`docs/STUDY_GUIDE.md`](docs/STUDY_GUIDE.md) — CN/TLS/JA3 from zero
 - [`docs/SETUP_MAC.md`](docs/SETUP_MAC.md) — macOS setup, step by step
 - [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md) — reproducible experiment commands

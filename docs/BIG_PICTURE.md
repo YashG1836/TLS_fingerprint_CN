@@ -146,10 +146,12 @@ a working artifact, not the time to actually knowing it.
   A deliberate successor covering more protocols (HTTP, SSH, X.509, not
   just TLS) with a more readable, partially-order-independent format
   designed to be less brittle against exactly the kind of
-  cipher/extension reordering that weakens plain JA3. Explicitly listed
-  as this project's most natural stretch goal (`docs/PROJECT_REPORT.md`
-  §10) — not implemented here on purpose, to keep the MVP scoped and
-  understandable first.
+  cipher/extension reordering that weakens plain JA3. **This project
+  implements JA4 (client-side) on top of the base MVP** — see
+  `docs/EXPERIMENTS.md` Experiment 6 for a real before/after where the
+  same Chrome install's JA3 changed between two runs while JA4's
+  cipher-hash segment stayed identical. The rest of the family (JA4S,
+  JA4H, ...) is still out of scope.
 
 ## 7. What's coming next — is this technique on its way out?
 

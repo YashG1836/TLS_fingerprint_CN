@@ -82,6 +82,19 @@ def format_report(report: FlowReport, index: int | None = None) -> str:
         lines.append(f"Match:         {match_line}")
         lines.append("")
 
+    if report.ja4:
+        lines.append("JA4 (client, reorder-resistant)")
+        lines.append("-" * 32)
+        lines.append(f"String: {report.ja4.ja4_string}")
+        lines.append("")
+
+        name_line, match_line = _match_line(report.ja4_match)
+        lines.append("Client Identification (via JA4)")
+        lines.append("-" * 32)
+        lines.append(f"Likely Client: {name_line}")
+        lines.append(f"Match:         {match_line}")
+        lines.append("")
+
     if report.ja3s:
         lines.append("JA3S (server)")
         lines.append("-" * 32)

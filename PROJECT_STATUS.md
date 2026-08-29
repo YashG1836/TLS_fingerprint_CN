@@ -13,7 +13,7 @@ can reproduce.
 | JA3 calculation (spec-faithful) | ✅ Done | `src/tls_fingerprint/ja3.py`; `tests/test_ja3.py` checks against hand-derived expected strings, not just self-consistency |
 | JA3S calculation (spec-faithful) | ✅ Done | `src/tls_fingerprint/ja3s.py`; `tests/test_ja3s.py` |
 | GREASE handling (RFC 8701) | ✅ Done | `ja3.GREASE_VALUES` (16 values, generated not hard-coded per-value); `tests/test_ja3.py::test_grease_table_has_16_values` |
-| Local fingerprint reference database | ✅ Done, 10 measured entries (5 JA3 + 5 JA3S) | `data/fingerprint_db.json`, built by `experiments/build_reference_db.py` from real pcaps |
+| Local fingerprint reference database | ✅ Done, 15 measured entries (5 JA3 + 5 JA3S + 5 JA4) | `data/fingerprint_db.json`, built by `experiments/build_reference_db.py` from real pcaps |
 | Fingerprint lookup/matching | ✅ Done, 3-state (known/possible/unknown) | `src/tls_fingerprint/database.py::lookup`; `tests/test_database.py` |
 | CLI output | ✅ Done (text + `--json`) | `tls-fingerprint analyze <pcap>`, `tls-fingerprint db list` |
 | ≥5 distinct clients/tools demonstrated | ✅ Done — 5 real, distinct JA3 hashes | `docs/EXPERIMENTS.md`: curl, openssl, Python `ssl`, headless Chrome, custom raw ClientHello |
@@ -25,7 +25,11 @@ can reproduce.
 | Unit tests: JA3S hashing | ✅ Done | `tests/test_ja3s.py::test_compute_ja3s_hashes_with_md5` |
 | Unit tests: parser edge cases | ✅ Done | `tests/test_parser_edge_cases.py` — empty stream, non-handshake content type, truncated record, all-GREASE ciphers, multi-message record, malformed extension length |
 | Integration tests: pcap → parser → JA3 → DB lookup | ✅ Done | `tests/test_integration.py` — builds a synthetic pcap with Scapy, runs the full pipeline |
-| `pytest` passes | ✅ Done — 36/36 passing | Run `pytest` yourself; captured output at time of writing: `36 passed in 0.21s` |
+| `pytest` passes | ✅ Done — 56/56 passing | Run `pytest` yourself; captured output at time of writing: `56 passed in 0.20s` |
+| **Stretch: JA4 (client) implementation** | ✅ Done, spec-verified | `src/tls_fingerprint/ja4.py`; `tests/test_ja4.py` validated against the *official* FoxIO spec's own worked examples (cipher hash, extension hash, full end-to-end string), not just self-consistency |
+| **Stretch: JA4 vs JA3 stability comparison** | ✅ Done — real, both-ways result | `docs/EXPERIMENTS.md` "Experiment 6" — same real Chrome, two runs: JA3 differed, JA4's cipher-hash segment stayed identical while its extension-count segment correctly changed (Chrome genuinely sent a different extension that run) |
+| **Stretch: bot/spoofing detection (JA3 vs claimed identity)** | ✅ Done, real capture | `src/tls_fingerprint/spoofing_detector.py`, `tls-fingerprint check-spoofing`; `tests/test_spoofing_detector.py`; real demo in `docs/EXPERIMENTS.md` "Experiment 7" |
+| **Stretch: "bombardment" detection-under-volume demo** | ✅ Done, real captures | `experiments/bombard_demo.py` — 5 real, separate live connections, each claiming to be Chrome, all 5 correctly flagged |
 | macOS setup instructions | ✅ Done | `docs/SETUP_MAC.md` |
 | Beginner study guide (CN → TLS → JA3 from zero) | ✅ Done | `docs/STUDY_GUIDE.md`, 21 sections + "what I should remember" |
 | Viva questions | ✅ Done — 40 questions | `docs/VIVA.md` |
@@ -85,12 +89,21 @@ tls-fingerprint analyze pcaps/demo.pcap   # -> known match, same hash as pcaps/c
 #    the database yet (any tool not already in `tls-fingerprint db list`,
 #    e.g. wget or a browser other than the one already captured) -- it will
 #    report status "unknown" until you add it with `tls-fingerprint db add`.
+
+# 6. (Stretch) show JA4's reorder-resistance: same command, richer output
+tls-fingerprint analyze pcaps/chrome.pcap        # note the JA4 section
+
+# 7. (Stretch) bot detection: a script lying about being Chrome gets caught
+tls-fingerprint check-spoofing pcaps/bot_client.pcap --claims Chrome
+
+# 8. (Stretch) the "bombardment" demo -- 5 fresh live connections, all flagged
+python experiments/bombard_demo.py 5
 ```
 
 ## Test evidence (full detail)
 
 ```
 $ pytest -q
-....................................                                     [100%]
-36 passed in 0.21s
+........................................................                 [100%]
+56 passed in 0.20s
 ```

@@ -226,7 +226,85 @@ the code produces exactly that string — not compared against some
 externally-trusted "known" hash, but against a self-derived ground truth.
 
 **40. What would you add if you had more time (stretch goals)?**
-JA4/JA4S (a newer, more detail-rich fingerprint scheme), live capture UX
-polish, a larger curated reference database across more tools/OS
-versions, and (Linux-only) eBPF/XDP-based high-performance capture — all
-explicitly out of scope for this MVP.
+JA4S/JA4H (the rest of the JA4 family), JARM (active server
+fingerprinting), live capture UX polish, a larger curated reference
+database across more tools/OS versions, and (Linux-only) eBPF/XDP-based
+high-performance capture — explicitly out of scope for this project.
+
+## JA4 (stretch goal, implemented)
+
+**41. Why implement JA4 on top of JA3 instead of just JA3?**
+Because we hit a real JA3 weakness ourselves: the same real Chrome
+install, run twice, produced two different JA3 hashes due to Chrome's
+extension-order randomization. JA4 was designed specifically to fix
+exactly that by sorting the cipher and extension lists before hashing.
+
+**42. What are JA4's three underscore-joined segments?**
+`a` — a 10-character human-readable summary (protocol, TLS version, SNI
+present, cipher count, extension count, ALPN); `b` — truncated SHA256 of
+the *sorted* cipher list; `c` — truncated SHA256 of the *sorted*
+extension list (SNI/ALPN excluded) plus the signature algorithms in their
+original order.
+
+**43. How did you validate the JA4 implementation was correct?**
+Fetched the official FoxIO spec document directly and used its own
+worked examples as test vectors — e.g. asserting a specific cipher list
+sorts and hashes to exactly `8daaf6152771`, the literal value published
+in the spec. Also built the spec's full end-to-end example ClientHello
+by hand and asserted the code reproduces `t13d1516h2_8daaf6152771_e5627efa2ab1`
+exactly. Not self-referential — checked against an external ground
+truth, the same rigor applied to JA3.
+
+**44. Did JA4 actually solve the instability you found, in practice?**
+Partially, and honestly: the cipher-hash segment stayed byte-identical
+across both real Chrome runs — proof the reordering-immunity works. But
+the extension-count segment still changed, because Chrome's second run
+genuinely sent one extra extension that run — a real difference, not an
+ordering artifact. JA4 correctly reported that as a real difference
+instead of hiding it; it doesn't make two genuinely-different ClientHellos
+fingerprint the same, and shouldn't.
+
+**45. What surprised you about the JA4 results?**
+Our real captured Chrome's cipher list — in its real on-the-wire order —
+matched the official spec's own documentation example exactly, cipher for
+cipher. Strong evidence the spec's authors used a real Chrome capture
+too, and that our implementation agrees with theirs on real-world data.
+
+## Bot/spoofing detection (stretch goal, implemented)
+
+**46. What's the actual real-world scenario this demonstrates?**
+A client can freely lie about what it is via the HTTP `User-Agent`
+header — it's just a string the program's author chose to send. What it
+can't as easily fake is the TLS ClientHello its actual networking library
+already sent moments earlier, because that's a structural byproduct of
+whichever library is really running, not a string literal.
+
+**47. Why does `check-spoofing` take the claimed identity as an argument
+instead of reading it from the traffic itself?**
+Because the User-Agent lives inside the encrypted HTTP request, and this
+project has a hard rule against decrypting anything, anywhere. In a real
+deployment, the one vantage point that legitimately has both signals
+together is whatever terminates TLS (a reverse proxy/WAF) — this project
+doesn't do that, so the claimed identity has to be supplied alongside the
+pcap, exactly like that real component would already have it.
+
+**48. Walk through what `check-spoofing` actually does.**
+Computes the real JA3 hash from the pcap's ClientHello. Looks up every
+database entry whose *name* contains the claimed identity (e.g.
+"Chrome") and collects their known hashes. If the measured hash isn't
+among them, flags a mismatch and reports what the hash actually does
+match instead (if anything) — it never just says "fake," it says what
+it's more likely to actually be.
+
+**49. In the real demo, what did the tool report?**
+A script sending a genuine Python-`ssl` handshake while claiming to be
+Chrome came back: `MISMATCH -- SUSPICIOUS ... matches: Python 3.14.6
+stdlib ssl` — correctly identifying both that the claim was false and
+what the traffic actually was.
+
+**50. Does firing many requests instead of one help an attacker evade
+this?**
+No, and this was tested directly, not just argued: five separate live
+connections, each with its own real TLS handshake, were flagged 5/5.
+The fingerprint is evidence about one connection's TLS stack, not a
+property that dilutes or averages out with volume.

@@ -4,6 +4,7 @@
     python -m tls_fingerprint.cli db list
     python -m tls_fingerprint.cli db add --hash ... --type ja3 --name curl --category client
     python -m tls_fingerprint.cli live --iface en0 --count 20 --out pcaps/live.pcap
+    python -m tls_fingerprint.cli check-spoofing pcaps/bot_client.pcap --claims Chrome
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from pathlib import Path
 from .analyzer import analyze_pcap
 from .database import FingerprintDatabase, FingerprintEntry
 from .report import format_report
+from .spoofing_detector import check_pcap, format_verdict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DB_PATH = PROJECT_ROOT / "data" / "fingerprint_db.json"
@@ -51,6 +53,13 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
                     "ja3s_match_names": (
                         sorted({e.name for e in r.ja3s_match.entries})
                         if r.ja3s_match
+                        else []
+                    ),
+                    "ja4": r.ja4.ja4_string if r.ja4 else None,
+                    "ja4_match_status": r.ja4_match.status if r.ja4_match else None,
+                    "ja4_match_names": (
+                        sorted({e.name for e in r.ja4_match.entries})
+                        if r.ja4_match
                         else []
                     ),
                 }
@@ -91,6 +100,13 @@ def _cmd_db_add(args: argparse.Namespace) -> int:
     db.save(args.db)
     print(f"Added {entry.fingerprint_type} entry '{entry.name}' -> {args.db}")
     return 0
+
+
+def _cmd_check_spoofing(args: argparse.Namespace) -> int:
+    db = FingerprintDatabase.load(args.db)
+    verdict = check_pcap(args.pcap, args.claims, db)
+    print(format_verdict(verdict))
+    return 1 if verdict.is_suspicious else 0
 
 
 def _cmd_live(args: argparse.Namespace) -> int:
@@ -143,6 +159,15 @@ def build_parser() -> argparse.ArgumentParser:
     p_db_add.add_argument("--command", default=None)
     p_db_add.add_argument("--notes", default=None)
     p_db_add.set_defaults(func=_cmd_db_add)
+
+    p_spoof = sub.add_parser(
+        "check-spoofing",
+        help="Check whether a pcap's real JA3 matches a claimed client identity (bot detection)",
+    )
+    p_spoof.add_argument("pcap", help="Path to a .pcap/.pcapng file")
+    p_spoof.add_argument("--claims", required=True, help="Claimed identity, e.g. 'Chrome'")
+    p_spoof.add_argument("--db", default=str(DEFAULT_DB_PATH))
+    p_spoof.set_defaults(func=_cmd_check_spoofing)
 
     p_live = sub.add_parser("live", help="Optional: live-capture TLS packets (needs sudo)")
     p_live.add_argument("--iface", required=True)

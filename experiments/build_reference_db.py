@@ -91,6 +91,24 @@ def main() -> int:
         )
         print(f"ja3  {report.ja3.ja3_hash}  {exp['client_name']}")
 
+        if report.ja4 is not None:
+            db.add(
+                FingerprintEntry(
+                    hash=report.ja4.ja4_string,
+                    fingerprint_type="ja4",
+                    name=exp["client_name"],
+                    category="client",
+                    fingerprint_string=report.ja4.ja4_string,
+                    library=exp["library"],
+                    source_type="measured",
+                    source=MEASURED_ON,
+                    command=exp["command"],
+                    notes=exp["notes"]
+                    + " JA4's own string already IS its identifier (no separate hash step needed).",
+                )
+            )
+            print(f"ja4  {report.ja4.ja4_string}  {exp['client_name']}")
+
         if report.ja3s is not None:
             db.add(
                 FingerprintEntry(

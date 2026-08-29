@@ -19,7 +19,7 @@ def _entry(name="curl", hash_value="abc123", fingerprint_type="ja3"):
 def test_invalid_fingerprint_type_rejected():
     with pytest.raises(ValueError):
         FingerprintEntry(
-            hash="x", fingerprint_type="ja4", name="x", category="client"
+            hash="x", fingerprint_type="not-a-real-type", name="x", category="client"
         )
 
 
