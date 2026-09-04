@@ -1,9 +1,5 @@
 # TLS Fingerprinting with JA3, JA3S and JA4
 
-Course: Computer Networks
-Author: Yash Goyal, 24110399
-Submission: 11 September 2026
-
 ## 1. Introduction
 
 This project implements a tool that identifies the software behind a TLS
