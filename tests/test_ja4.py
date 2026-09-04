@@ -111,6 +111,25 @@ def test_extension_hash_excludes_sni_and_alpn_and_grease():
     assert result == "e5627efa2ab1"  # identical to without GREASE
 
 
+def test_extension_hash_keeps_grease_in_signature_algorithms():
+    # Ground truth from tshark's own ja4/ja4_r dissector on pcaps/chrome_live.pcap:
+    #   tshark -r pcaps/chrome_live.pcap -Y "tls.handshake.type==1" \
+    #     -T fields -e tls.handshake.ja4 -e tls.handshake.ja4_r
+    # gives ja4 = t13d1517h2_8daaf6152771_541cd5a3d78e, whose ja4_r sigalg
+    # segment is "4a4a,0904,...,0601" -- 0x4a4a is GREASE and Wireshark keeps
+    # it, unlike the cipher and extension lists where GREASE is stripped.
+    ext_types = [
+        0x0005, 0x000A, 0x000B, 0x000D, 0x0012, 0x0017, 0x001B,
+        0x0023, 0x002B, 0x002D, 0x0033, 0x44CD, 0xCA34, 0xFE0D, 0xFF01,
+    ]
+    sig_algs_with_grease = [
+        0x4A4A, 0x0904, 0x0905, 0x0906, 0x0403, 0x0804,
+        0x0401, 0x0503, 0x0805, 0x0501, 0x0806, 0x0601,
+    ]
+    result = _extension_hash(_fake_extensions(ext_types), sig_algs_with_grease)
+    assert result == "541cd5a3d78e"
+
+
 def test_extension_hash_empty_is_literal_zeros():
     assert _extension_hash([], []) == "000000000000"
     # Only SNI/ALPN present -> nothing left after exclusion:

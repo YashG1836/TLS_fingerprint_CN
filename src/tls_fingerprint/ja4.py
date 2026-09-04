@@ -29,9 +29,13 @@ JA4 string shape (3 underscore-joined segments):
       "_" + (signature_algorithms list, IN THE ORDER THEY WERE SENT --
       not sorted)
 
-GREASE values (RFC 8701) are stripped everywhere, using the same table
-ja3.py already defines -- it's the identical reserved value set, so we
-reuse it rather than duplicating it.
+GREASE values (RFC 8701) are stripped from the cipher list (b) and the
+extension list (c's first half), using the same table ja3.py already
+defines -- it's the identical reserved value set, so we reuse it rather
+than duplicating it. GREASE is NOT stripped from signature_algorithms
+(c's second half): the FoxIO spec only lists ciphers and extensions as
+GREASE-stripped, and Wireshark's own ja4/ja4_r dissector agrees -- GREASE
+sigalgs are kept and hashed in the order sent.
 """
 
 from __future__ import annotations
@@ -159,8 +163,8 @@ def _extension_hash(extensions: list[Extension], sig_algs: list[int]) -> str:
         return "000000000000"
     ext_part = ",".join(f"{e:04x}" for e in non_grease_sorted)
     if sig_algs:
-        sig_part = ",".join(f"{s:04x}" for s in sig_algs if not is_grease(s))
-        full = f"{ext_part}_{sig_part}" if sig_part else ext_part
+        sig_part = ",".join(f"{s:04x}" for s in sig_algs)
+        full = f"{ext_part}_{sig_part}"
     else:
         full = ext_part
     return hashlib.sha256(full.encode("ascii")).hexdigest()[:12]

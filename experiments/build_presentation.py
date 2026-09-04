@@ -210,7 +210,7 @@ def build():
     add_body(s, "Identifying who's really on the other end of an HTTPS "
                 "connection — without decrypting anything.",
              top=Inches(3.75), size=18, width=Inches(9.5))
-    add_kpi_row(s, [("5", "real clients captured"), ("15", "measured fingerprints"),
+    add_kpi_row(s, [("5", "real clients captured"), ("15", "database entries"),
                     ("0", "fabricated results")], top=Inches(4.75))
 
     # 2. Problem statement
@@ -336,7 +336,7 @@ def build():
              [("81a2542af8442fcd7802f178d9f2a626", FONT_MONO, 14, TEXT, False)],
              title="Run 1")
     add_card(s, Inches(6.65), Inches(2.6), Inches(5.6), Inches(1.6),
-             [("825cf36b22c9ab3e25a5bc094aecde86", FONT_MONO, 14, FLAG, True)],
+             [("a00e551d2f4af85ede1156537ebf095a", FONT_MONO, 14, FLAG, True)],
              title="Run 2 — same install, moments later")
     add_body(s, "Modern Chrome deliberately randomizes ClientHello extension "
                 "order per connection, specifically to weaken fingerprinting "
@@ -355,7 +355,7 @@ def build():
     ], title="Cipher segment (JA4)")
     add_card(s, Inches(6.65), Inches(2.6), Inches(5.6), Inches(2.9), [
         ("806a8c22fdea   (16 extensions)", FONT_MONO, 13, TEXT, False),
-        ("cb7bf5808d99   (17 extensions)", FONT_MONO, 13, FLAG, True),
+        ("541cd5a3d78e   (17 extensions)", FONT_MONO, 13, FLAG, True),
         ("Genuinely different — Chrome sent one\nextra extension the 2nd time. JA4 reports\nthat honestly instead of hiding it.", FONT_BODY, 12, FAINT, False),
     ], title="Extension segment (JA4)")
     add_body(s, "Validated against the official FoxIO spec's own published "
@@ -422,7 +422,7 @@ def build():
         "JA3S depends on the client, too — two of our own clients produced "
         "an identical JA3S against the same server.",
         "GREASE and reordering actively fight back — Chrome randomizes "
-        "its own hello on purpose (slide 8).",
+        "its own hello on purpose (slide 9).",
         "Evasion is possible — since the fingerprint is client-controlled "
         "bytes, a determined attacker can copy it exactly.",
         "Nothing here decrypts anything — only the already-unencrypted "
