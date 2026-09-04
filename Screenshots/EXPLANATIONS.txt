@@ -6,10 +6,33 @@ they were taken. Read top to bottom — they tell one continuous story.
 
 01_pytest_all_tests_passing.png
 --------------------------------
-Runs "pytest" and gets "56 passed". This is the offline sanity check —
-it proves the core logic (parsing, JA3/JA3S/JA4 math, database lookup)
-is correct on its own, with zero network involved, before trusting any
-result that follows. Think of it as calibrating the tool before using it.
+Runs "pytest" and gets "56 passed". Think of it as calibrating the tool
+before using it — the code's logic is verified on its own, offline, with
+zero network involved, BEFORE trusting any real capture that follows.
+
+ARE THESE TESTS ACTUALLY PART OF THE PROJECT, OR JUST FILLER?
+They're real, load-bearing, and were an explicit project requirement
+(unit + integration tests were asked for from the start) — not padding.
+What the 56 tests actually check:
+  - JA3 / JA3S string construction, checked against hand-derived expected
+    values worked out by hand from the RFC spec (not just re-checking the
+    code against itself).
+  - JA4, checked against the OFFICIAL FoxIO spec's own published worked
+    examples -- an external ground truth we didn't invent.
+  - Parser edge cases: a truncated TLS record, a ClientHello offering
+    only GREASE ciphers, a handshake message split across two TLS
+    records, a malformed extension length -- cases that would crash or
+    silently misparse a naive implementation.
+  - Database lookup logic: does "known" vs "possible" (ambiguous) vs
+    "unknown" get reported correctly.
+  - The spoofing-detector's mismatch logic (screenshots 11-12).
+  - One end-to-end integration test: build a fake pcap, run the WHOLE
+    pipeline on it, check the final printed answer is right.
+Why it matters: without these, every "Known match" you see in the other
+screenshots would just be "the code ran and printed something" -- these
+tests are what let you say the JA3/JA3S/JA4 MATH itself is provably
+correct, independent of whether any particular real capture happens to
+look right.
 
 
 02_reference_database_list.png

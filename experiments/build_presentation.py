@@ -201,7 +201,7 @@ def add_table(slide, left, top, width, height, header, rows):
 
 def build():
     prs = new_deck()
-    total = 14
+    total = 15
 
     # 1. Title
     s = add_slide(prs, 1, total)
@@ -210,7 +210,7 @@ def build():
     add_body(s, "Identifying who's really on the other end of an HTTPS "
                 "connection — without decrypting anything.",
              top=Inches(3.75), size=18, width=Inches(9.5))
-    add_kpi_row(s, [("5", "real clients captured"), ("56", "tests passing"),
+    add_kpi_row(s, [("5", "real clients captured"), ("15", "measured fingerprints"),
                     ("0", "fabricated results")], top=Inches(4.75))
 
     # 2. Problem statement
@@ -273,8 +273,28 @@ def build():
                 "the handshake is parsed byte-by-byte against the real TLS spec, "
                 "not guessed.", top=Inches(4.5), size=16, width=Inches(10.5))
 
-    # 6. The reference database
+    # 6. Testing & validation
     s = add_slide(prs, 6, total)
+    add_eyebrow(s, "Before Trusting Any Result")
+    add_title(s, "56 automated tests — what they actually check", size=28)
+    add_bullets(s, [
+        "JA3 / JA3S string construction, checked against hand-derived "
+        "expected values (not just checked against itself).",
+        "JA4, checked against the official FoxIO spec's own published "
+        "worked examples — an external ground truth.",
+        "Parser edge cases: truncated records, GREASE-only cipher lists, "
+        "a handshake split across multiple TLS records.",
+        "Database matching logic (known / possible / unknown) and the "
+        "spoofing-detector's mismatch logic.",
+        "One end-to-end test: build a synthetic pcap, run the full "
+        "pipeline, check the final answer.",
+    ], top=Inches(2.35), size=16, gap=Inches(0.68))
+    add_body(s, "Runs offline in under a second, no network needed — this is "
+                "what's checked BEFORE any real capture is trusted.",
+             top=Inches(6.35), size=13, color=FAINT)
+
+    # 7. The reference database
+    s = add_slide(prs, 7, total)
     add_eyebrow(s, "Reference Database")
     add_title(s, "A notebook of known fingerprints", size=32)
     add_body(s, "Every entry was computed from a real, captured network "
@@ -289,8 +309,8 @@ def build():
         ("... 15 entries total: 5 clients x (JA3 + JA4 + JA3S)", FONT_MONO, 13, FAINT, False),
     ], title="tls-fingerprint db list")
 
-    # 7. Results — 5 clients table
-    s = add_slide(prs, 7, total)
+    # 8. Results — 5 clients table
+    s = add_slide(prs, 8, total)
     add_eyebrow(s, "Results")
     add_title(s, "Five different clients. Five different fingerprints.", size=27)
     add_table(
@@ -308,8 +328,8 @@ def build():
                 "get different fingerprints — JA3 reflects configuration, not "
                 "just which library is linked.", top=Inches(6.0), size=13, color=FAINT)
 
-    # 8. Unexpected discovery
-    s = add_slide(prs, 8, total)
+    # 9. Unexpected discovery
+    s = add_slide(prs, 9, total)
     add_eyebrow(s, "An Unplanned Discovery")
     add_title(s, "The same Chrome, twice, gave two different answers.", size=28)
     add_card(s, MARGIN, Inches(2.6), Inches(5.6), Inches(1.6),
@@ -324,8 +344,8 @@ def build():
                 "live, re-running our own experiment.",
              top=Inches(4.6), size=16, width=Inches(10.8))
 
-    # 9. JA4 fix + comparison
-    s = add_slide(prs, 9, total)
+    # 10. JA4 fix + comparison
+    s = add_slide(prs, 10, total)
     add_eyebrow(s, "Built In Response — JA4")
     add_title(s, "JA4: a newer fingerprint that isolates what actually changed", size=27)
     add_card(s, MARGIN, Inches(2.6), Inches(5.6), Inches(2.9), [
@@ -342,8 +362,8 @@ def build():
                 "worked examples — not just checked against itself.",
              top=Inches(5.75), size=13, color=FAINT)
 
-    # 10. Bot attacks — how fake clients lie
-    s = add_slide(prs, 10, total)
+    # 11. Bot attacks — how fake clients lie
+    s = add_slide(prs, 11, total)
     add_eyebrow(s, "From Fingerprint To Defense")
     add_title(s, "How a bot pretends to be Chrome", size=32)
     add_bullets(s, [
@@ -357,8 +377,8 @@ def build():
         "tell.",
     ], top=Inches(2.4), size=18, gap=Inches(0.78))
 
-    # 11. Spoofing detection demo
-    s = add_slide(prs, 11, total)
+    # 12. Spoofing detection demo
+    s = add_slide(prs, 12, total)
     add_eyebrow(s, "Catching The Lie")
     add_title(s, "Spoofing detection, live", size=34)
     add_card(s, MARGIN, Inches(2.5), Inches(11.5), Inches(2.6), [
@@ -373,8 +393,8 @@ def build():
                 "and the tool reports what it actually is instead.",
              top=Inches(5.6), size=15, width=Inches(10.8))
 
-    # 12. Bombardment / stress test
-    s = add_slide(prs, 12, total)
+    # 13. Bombardment / stress test
+    s = add_slide(prs, 13, total)
     add_eyebrow(s, "Under Load")
     add_title(s, "5 rapid requests. 5 for 5, caught.", size=32)
     add_card(s, MARGIN, Inches(2.4), Inches(11.5), Inches(3.0), [
@@ -392,8 +412,8 @@ def build():
                 "so more requests just means more identical evidence.",
              top=Inches(5.7), size=14, width=Inches(10.8))
 
-    # 13. Limitations
-    s = add_slide(prs, 13, total)
+    # 14. Limitations
+    s = add_slide(prs, 14, total)
     add_eyebrow(s, "What This Doesn't Prove")
     add_title(s, "A fingerprint is a hint, not a verdict.", size=32)
     limits = [
@@ -416,15 +436,15 @@ def build():
                     font=FONT_BODY, size=15, color=MUTED, line_spacing=1.2)
         top = top + Inches(0.85)
 
-    # 14. Conclusion
-    s = add_slide(prs, 14, total)
+    # 15. Conclusion
+    s = add_slide(prs, 15, total)
     add_eyebrow(s, "In Summary")
     add_title(s, "Built, tested, and proven against real traffic.", size=32)
     add_body(s, "Every hash on every slide came from a real handshake with a "
                 "real server — none of it invented.",
              top=Inches(2.3), size=18, width=Inches(10.5))
-    add_kpi_row(s, [("56", "tests passing"), ("15", "measured DB entries"),
-                    ("7", "real experiments"), ("2", "fingerprint schemes")],
+    add_kpi_row(s, [("15", "measured DB entries"), ("7", "real experiments"),
+                    ("2", "fingerprint schemes")],
                 top=Inches(3.4))
     add_body(s, "TLS Fingerprinting — Computer Networks course project.",
              top=Inches(5.2), size=13, color=FAINT)
