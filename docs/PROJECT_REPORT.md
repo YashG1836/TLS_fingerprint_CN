@@ -149,7 +149,7 @@ claiming Chrome was flagged `MISMATCH -- SUSPICIOUS ... matches: Python
 3.14.6 stdlib ssl`. A 5-request burst (`experiments/bombard_demo.py`)
 was flagged 5/5, each a genuinely separate live connection.
 
-All 59 automated tests pass (`pytest`): JA3/JA3S checked against
+All 61 automated tests pass (`pytest`): JA3/JA3S checked against
 hand-derived expected values, JA4 checked against the *official FoxIO
 spec's own worked examples*, parser edge cases, database lookup logic,
 spoofing-detector logic, and one end-to-end integration test.
