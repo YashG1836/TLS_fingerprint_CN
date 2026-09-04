@@ -49,7 +49,6 @@ built in direct response to something we discovered while testing:
   the claim against the real fingerprint and flags the mismatch — this
   is the real-world security use case for all of the above.
 
-## Everything is real, nothing is invented
 
 Every hash in this repo — in the database, in the docs, in the
 presentation — was computed from an actual network connection this
