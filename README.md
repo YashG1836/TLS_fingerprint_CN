@@ -1,4 +1,13 @@
+Team ID - T013, Project ID - 11
 # TLS Fingerprinting (JA3 / JA3S / JA4)
+
+### Team Members:
+
+1. Suhani - 24110358
+2. Miloni Dipak Thakkar - 24110204
+3. Yash Goyal - 24110399
+4. Laxmidhar Panda - 24110185
+# 
 
 Reads TLS handshakes out of a packet capture and works out which program
 opened the connection, from the structure of the handshake alone.
