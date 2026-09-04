@@ -3,7 +3,7 @@
 Every entry in data/fingerprint_db.json is something WE actually measured
 on this machine (source_type "measured") -- we do not ship invented
 "published" hashes. See docs/IMPLEMENTATION.md for how each entry was
-produced and docs/STUDY_GUIDE.md for why a JA3 hash is a strong hint, not
+produced and docs/PROJECT_REPORT.md for why a JA3 hash is a strong hint, not
 proof, of client identity.
 """
 
