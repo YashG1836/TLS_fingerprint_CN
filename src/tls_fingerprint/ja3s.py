@@ -20,7 +20,7 @@ Because JA3S only reflects the server's *chosen* cipher/extensions -- which
 depend on what the client offered -- the same server can produce different
 JA3S values against different clients. JA3S is best read as "JA3 of this
 client paired with JA3S of this server", not as a server identity on its
-own. See docs/STUDY_GUIDE.md and docs/PROJECT_REPORT.md limitations.
+own. See docs/PROJECT_REPORT.md limitations.
 """
 
 from __future__ import annotations
