@@ -11,7 +11,7 @@ cd CN_tls_fingerprint
 source .venv/bin/activate
 pytest -q
 ```
-Expect: `56 passed`. This proves the code logic is correct before you
+Expect: `61 passed`. This proves the code logic is correct before you
 touch the network at all.
 
 ---

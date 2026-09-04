@@ -6,14 +6,14 @@ they were taken. Read top to bottom — they tell one continuous story.
 
 01_pytest_all_tests_passing.png
 --------------------------------
-Runs "pytest" and gets "56 passed". Think of it as calibrating the tool
+Runs "pytest" and gets "61 passed". Think of it as calibrating the tool
 before using it — the code's logic is verified on its own, offline, with
 zero network involved, BEFORE trusting any real capture that follows.
 
 ARE THESE TESTS ACTUALLY PART OF THE PROJECT, OR JUST FILLER?
 They're real, load-bearing, and were an explicit project requirement
 (unit + integration tests were asked for from the start) — not padding.
-What the 56 tests actually check:
+What the 61 tests actually check:
   - JA3 / JA3S string construction, checked against hand-derived expected
     values worked out by hand from the RFC spec (not just re-checking the
     code against itself).

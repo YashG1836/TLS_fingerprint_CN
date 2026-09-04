@@ -276,7 +276,7 @@ def build():
     # 6. Testing & validation
     s = add_slide(prs, 6, total)
     add_eyebrow(s, "Before Trusting Any Result")
-    add_title(s, "56 automated tests — what they actually check", size=28)
+    add_title(s, "61 automated tests — what they actually check", size=28)
     add_bullets(s, [
         "JA3 / JA3S string construction, checked against hand-derived "
         "expected values (not just checked against itself).",

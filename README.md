@@ -74,7 +74,7 @@ data/fingerprint_db.json   15 real, measured entries (5 clients x JA3/JA3S/JA4; 
                            fingerprints -- two clients legitimately share one JA3S, see below)
 pcaps/                     the actual recordings used for every result in this repo
 experiments/                scripts that generated those recordings
-tests/                      59 automated tests
+tests/                      61 automated tests
 docs/
   IMPLEMENTATION.md          run this live to present the project (start here for a demo)
   STUDY_GUIDE.md              networking/TLS concepts from zero
@@ -101,7 +101,7 @@ copy as a `.pcap`. See `docs/IMPLEMENTATION.md` for exact commands.
 ## Quick start
 
 ```bash
-pytest                                   # 59 tests should pass
+pytest                                   # 61 tests should pass
 tls-fingerprint db list                  # the known-fingerprint database
 tls-fingerprint analyze pcaps/curl.pcap  # identify a real capture
 ```
@@ -155,7 +155,7 @@ JA3 reflects configuration, not just which library is linked.
 ```bash
 pytest
 ```
-59 tests: JA3/JA3S checked against hand-derived expected values, JA4
+61 tests: JA3/JA3S checked against hand-derived expected values, JA4
 checked against the *official FoxIO spec's own worked examples*, parser
 edge cases, database lookup logic, spoofing-detector logic, and an
 end-to-end pcap-to-result integration test.
