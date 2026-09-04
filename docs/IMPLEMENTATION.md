@@ -27,7 +27,10 @@ for demos/tutorials — safe to hit repeatedly) through a small relay
 ```bash
 tls-fingerprint db list
 ```
-Shows the 15 fingerprints already on file (5 clients x JA3 + JA3S + JA4).
+Shows the 15 entries already on file (5 clients x JA3 + JA3S + JA4; 14
+distinct fingerprint values -- two clients legitimately produced an
+identical JA3S against the same server, see docs/PROJECT_REPORT.md
+section 9).
 
 ```bash
 tls-fingerprint analyze pcaps/curl.pcap
@@ -105,7 +108,7 @@ tls-fingerprint analyze pcaps/chrome_live.pcap | grep "^Hash" | head -1
 ```
 ```
 Hash:   81a2542af8442fcd7802f178d9f2a626
-Hash:   825cf36b22c9ab3e25a5bc094aecde86
+Hash:   a00e551d2f4af85ede1156537ebf095a
 ```
 Same real Chrome install, two different JA3 hashes. **Why:** Chrome
 deliberately randomizes its ClientHello extension order per connection,
@@ -125,7 +128,7 @@ for name in ['chrome.pcap', 'chrome_live.pcap']:
 ```
 ```
 chrome.pcap      -> t13d1516h2_8daaf6152771_806a8c22fdea
-chrome_live.pcap -> t13d1517h2_8daaf6152771_cb7bf5808d99
+chrome_live.pcap -> t13d1517h2_8daaf6152771_541cd5a3d78e
 ```
 
 **Say out loud:** the middle segment (`8daaf6152771`, the cipher hash)

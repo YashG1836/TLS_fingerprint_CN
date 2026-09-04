@@ -130,7 +130,7 @@ Two further experiments, both motivated by findings during testing:
 | curl 8.7.1 | SecureTransport/LibreSSL | `375c6162a492…ce8424` | `d75f9129bb5d…e081bcb2` |
 | openssl s_client 3.6.2 | OpenSSL 3.6.2 | `0b85eb0d4981…f0ac5f` | `907bf3ecef1c…37b43de8` |
 | Python 3.14.6 `ssl` | OpenSSL 3.6.2 | `f21f8e6cf70d…ef401c` | `907bf3ecef1c…37b43de8` |
-| Chrome 151 (headless) | BoringSSL | `81a2542af844…f2a626` | `eb1d94daa7e0…56e7054` |
+| Chrome 151 (headless) | BoringSSL | `81a2542af844…f2a626` | `eb1d94daa7e0…fb6e7054` |
 | Custom raw ClientHello | none | `c53113116bb0…6fedc9` | `ba02d4299a6e…7631993` |
 
 **JA4 vs JA3, same real Chrome, two runs:**
@@ -138,7 +138,7 @@ Two further experiments, both motivated by findings during testing:
 | Run | JA3 | JA4 |
 |---|---|---|
 | First | `81a2542af8442fcd7802f178d9f2a626` | `t13d1516h2_8daaf6152771_806a8c22fdea` |
-| Second | `825cf36b22c9ab3e25a5bc094aecde86` | `t13d1517h2_8daaf6152771_cb7bf5808d99` |
+| Second | `a00e551d2f4af85ede1156537ebf095a` | `t13d1517h2_8daaf6152771_541cd5a3d78e` |
 
 JA3 changed completely; JA4's cipher-hash segment (`8daaf6152771`) is
 identical in both — the reordering-immunity JA4 was designed to provide,
@@ -149,7 +149,7 @@ claiming Chrome was flagged `MISMATCH -- SUSPICIOUS ... matches: Python
 3.14.6 stdlib ssl`. A 5-request burst (`experiments/bombard_demo.py`)
 was flagged 5/5, each a genuinely separate live connection.
 
-All 56 automated tests pass (`pytest`): JA3/JA3S checked against
+All 59 automated tests pass (`pytest`): JA3/JA3S checked against
 hand-derived expected values, JA4 checked against the *official FoxIO
 spec's own worked examples*, parser edge cases, database lookup logic,
 spoofing-detector logic, and one end-to-end integration test.
