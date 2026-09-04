@@ -92,7 +92,7 @@ def reassemble_tcp_stream(segments: list[tuple[int, bytes]]) -> bytes:
     delivery, partial-overlap coalescing) is out of scope for this MVP --
     the pcaps produced by our experiments and by short-lived local captures
     are clean single-path captures where this is sufficient. See
-    docs/STUDY_GUIDE.md for the limitation note.
+    docs/PROJECT_REPORT.md for the limitation note.
     """
     seen: dict[int, bytes] = {}
     for seq, payload in segments:
