@@ -1,30 +1,22 @@
 """JA3 fingerprint computation.
 
-Implements the JA3 spec as published by Salesforce Engineering
-("TLS Fingerprinting with JA3 and JA3S", John B. Althouse et al.,
-https://github.com/salesforce/ja3). JA3 is built purely from fields already
-present in the ClientHello -- nothing here is inferred or invented.
+Implements the JA3 spec published by Salesforce
+(https://github.com/salesforce/ja3). Built purely from fields already in
+the ClientHello -- nothing inferred or invented.
 
-JA3 string format (5 comma-separated fields, each a "-"-joined decimal list):
+JA3 string = 5 comma-separated fields, each a "-"-joined decimal list:
 
     SSLVersion,Cipher,SSLExtension,EllipticCurve,EllipticCurvePointFormat
 
-- SSLVersion: the ClientHello's own version field (decimal).
-- Cipher: cipher suites offered, in the order the client listed them.
-- SSLExtension: extension type IDs, in the order they appear.
-- EllipticCurve: the supported_groups (elliptic curves) extension list.
-- EllipticCurvePointFormat: the ec_point_formats extension list.
+Version is the ClientHello's own version field. Cipher/SSLExtension are
+listed in the order the client sent them. EllipticCurve/PointFormat come
+from the supported_groups / ec_point_formats extensions. A missing field
+is left empty (the comma still appears, so there are always 5 fields).
 
-Any field that has no data (extension absent) is left empty -- the commas
-still appear, so the field count in the string is always 5.
-
-GREASE values (RFC 8701) are reserved by some clients (Chrome, and others
-that follow suit) as placeholder cipher/extension/group IDs whose only
-purpose is to catch servers that break on unknown values. They are
-intentionally randomized per-connection, so JA3 strips them out everywhere
-they can appear -- otherwise every GREASE-using client would fingerprint as
-a different JA3 hash on every single connection, defeating the point of a
-fingerprint.
+GREASE values (RFC 8701) are randomized per-connection placeholder IDs
+some clients (Chrome and followers) insert on purpose. They're stripped
+everywhere -- otherwise every GREASE-using client would get a different
+JA3 hash on every single connection.
 """
 
 from __future__ import annotations

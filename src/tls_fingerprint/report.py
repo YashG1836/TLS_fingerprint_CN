@@ -51,6 +51,23 @@ def _match_line(match: MatchResult | None) -> tuple[str, str]:
     return "Unknown", "Unknown fingerprint (not in reference database)"
 
 
+def _fingerprint_block(lines, title, string, extra_hash_line, match, who_label):
+    lines.append(title)
+    lines.append("-" * 32)
+    lines.append(f"String: {string}")
+    if extra_hash_line:
+        lines.append(extra_hash_line)
+    lines.append("")
+
+    name_line, match_line = _match_line(match)
+    lines.append(f"{who_label} Identification")
+    lines.append("-" * 32)
+    prefix = f"Likely {who_label}: "
+    lines.append(f"{prefix}{name_line}")
+    lines.append(f"Match:{' ' * (len(prefix) - len('Match:'))}{match_line}")
+    lines.append("")
+
+
 def format_report(report: FlowReport, index: int | None = None) -> str:
     lines: list[str] = []
     header = "Flow" if index is None else f"Flow #{index}"
@@ -69,45 +86,22 @@ def format_report(report: FlowReport, index: int | None = None) -> str:
     lines.append("")
 
     if report.ja3:
-        lines.append("JA3 (client)")
-        lines.append("-" * 32)
-        lines.append(f"String: {report.ja3.ja3_string}")
-        lines.append(f"Hash:   {report.ja3.ja3_hash}")
-        lines.append("")
-
-        name_line, match_line = _match_line(report.ja3_match)
-        lines.append("Client Identification")
-        lines.append("-" * 32)
-        lines.append(f"Likely Client: {name_line}")
-        lines.append(f"Match:         {match_line}")
-        lines.append("")
+        _fingerprint_block(
+            lines, "JA3 (client)", report.ja3.ja3_string,
+            f"Hash:   {report.ja3.ja3_hash}", report.ja3_match, "Client",
+        )
 
     if report.ja4:
-        lines.append("JA4 (client, reorder-resistant)")
-        lines.append("-" * 32)
-        lines.append(f"String: {report.ja4.ja4_string}")
-        lines.append("")
-
-        name_line, match_line = _match_line(report.ja4_match)
-        lines.append("Client Identification (via JA4)")
-        lines.append("-" * 32)
-        lines.append(f"Likely Client: {name_line}")
-        lines.append(f"Match:         {match_line}")
-        lines.append("")
+        _fingerprint_block(
+            lines, "JA4 (client, reorder-resistant)", report.ja4.ja4_string,
+            None, report.ja4_match, "Client",
+        )
 
     if report.ja3s:
-        lines.append("JA3S (server)")
-        lines.append("-" * 32)
-        lines.append(f"String: {report.ja3s.ja3s_string}")
-        lines.append(f"Hash:   {report.ja3s.ja3s_hash}")
-        lines.append("")
-
-        name_line, match_line = _match_line(report.ja3s_match)
-        lines.append("Server Identification")
-        lines.append("-" * 32)
-        lines.append(f"Likely Server Stack: {name_line}")
-        lines.append(f"Match:               {match_line}")
-        lines.append("")
+        _fingerprint_block(
+            lines, "JA3S (server)", report.ja3s.ja3s_string,
+            f"Hash:   {report.ja3s.ja3s_hash}", report.ja3s_match, "Server Stack",
+        )
     else:
         lines.append("JA3S (server)")
         lines.append("-" * 32)

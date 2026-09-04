@@ -1,20 +1,17 @@
 """Identity-claim vs. TLS-fingerprint consistency check ("bot detection").
 
-The real-world use case this project keeps citing as motivation: a bot can
-trivially claim to be Chrome by sending a `User-Agent: ... Chrome ...`
-HTTP header -- that's just a string literal the author chose to type. It
-cannot as easily fake *which TLS library actually produced its
-ClientHello*, because that's a structural property of the library itself,
-not something the program's author writes by hand (unless they go to real
-lengths to mimic it -- see docs/BIG_PICTURE.md sec 2's note on uTLS).
+A bot can trivially claim to be Chrome by sending a
+`User-Agent: ... Chrome ...` HTTP header -- that's just a string literal.
+It can't as easily fake *which TLS library actually produced its
+ClientHello*, since that's a structural property of the library, not
+something typed by hand.
 
-This module does NOT read the User-Agent header itself -- we never
-decrypt anything here, on principle (see docs/PROJECT_REPORT.md sec 9).
-The claimed identity has to be supplied by the caller, exactly like a real
-reverse proxy/WAF would have it: that's the one vantage point in a real
-deployment that legitimately sees BOTH the ClientHello (pre-decryption)
-and the HTTP User-Agent (post-decryption) at once, because it's the box
-terminating TLS. We just implement the comparison logic.
+This module never reads the User-Agent itself -- we never decrypt
+anything here, on principle. The claimed identity is supplied by the
+caller, exactly like a real reverse proxy/WAF would have it: that's the
+one vantage point that legitimately sees both the ClientHello
+(pre-decryption) and the User-Agent (post-decryption) together, because
+it's the box terminating TLS. We just implement the comparison.
 """
 
 from __future__ import annotations

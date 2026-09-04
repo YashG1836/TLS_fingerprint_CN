@@ -1,30 +1,20 @@
 """Root-free TLS handshake capture relay.
 
-macOS requires root (BPF device access) to sniff packets off a NIC, which
-we cannot do non-interactively in this environment (sudo needs a
-password). Instead, this tool sits between a real client and a real server
-at the TCP layer:
+macOS needs root (sudo) to sniff packets off a network card. Instead, this
+tool sits between a real client and a real server at the TCP layer and just
+forwards bytes untouched, while keeping a copy:
 
     client  --TCP-->  this relay  --TCP-->  real server (e.g. example.com:443)
 
-It never terminates or inspects TLS -- it just forwards bytes verbatim in
-both directions while also copying them into a buffer. Because it's a pure
-byte pass-through, the TLS handshake happening "through" it is completely
-real: the client validates the server's real certificate, and the
-ClientHello/ServerHello bytes are exactly what the client/server actually
-sent. Only the *capture method* differs from a NIC tap -- that's recorded
-in the resulting pcap's provenance notes, never hidden.
+Since it never opens or modifies TLS, the handshake happening "through" it
+is completely real -- the client validates the server's real certificate.
+Only the capture *method* differs from a NIC tap.
 
 Two modes:
-
-  tcp      Fixed target given via --target host:port. Use for clients that
-           support "connect to a different address but keep the original
-           SNI/Host" (curl --connect-to, openssl s_client -connect +
-           -servername, a raw Python socket).
-
-  connect  Speaks a minimal HTTP CONNECT proxy (just enough for Chrome's
-           --proxy-server flag). The target host:port is read from the
-           client's CONNECT request line instead of a fixed --target.
+  tcp      Fixed target via --target host:port (curl --connect-to,
+           openssl s_client -connect + -servername, a raw socket).
+  connect  Speaks minimal HTTP CONNECT (for Chrome's --proxy-server flag);
+           the target is read from the client's CONNECT request instead.
 
 Usage:
     python -m tls_fingerprint.capture_proxy --mode tcp \\

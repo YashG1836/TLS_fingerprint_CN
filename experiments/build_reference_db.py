@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PCAP_DIR = ROOT / "pcaps"
 DB_PATH = ROOT / "data" / "fingerprint_db.json"
 
-MEASURED_ON = "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/EXPERIMENTS.md)"
+MEASURED_ON = "macOS 26.5.2 (Darwin 25F84), 2026-08-25, captured via capture_proxy.py relay (see docs/IMPLEMENTATION.md)"
 SERVER_NAME = "Cloudflare edge (fronting example.com)"
 
 EXPERIMENTS = [

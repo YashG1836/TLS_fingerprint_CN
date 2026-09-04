@@ -1,10 +1,10 @@
 """Command-line entry point.
 
-    python -m tls_fingerprint.cli analyze pcaps/curl.pcap
-    python -m tls_fingerprint.cli db list
-    python -m tls_fingerprint.cli db add --hash ... --type ja3 --name curl --category client
-    python -m tls_fingerprint.cli live --iface en0 --count 20 --out pcaps/live.pcap
-    python -m tls_fingerprint.cli check-spoofing pcaps/bot_client.pcap --claims Chrome
+    tls-fingerprint analyze pcaps/curl.pcap
+    tls-fingerprint analyze pcaps/curl.pcap --json
+    tls-fingerprint db list
+    tls-fingerprint db add --hash ... --type ja3 --name curl --category client
+    tls-fingerprint check-spoofing pcaps/bot_client.pcap --claims Chrome
 """
 
 from __future__ import annotations
@@ -23,6 +23,31 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DB_PATH = PROJECT_ROOT / "data" / "fingerprint_db.json"
 
 
+def _match_summary(match) -> dict:
+    if match is None:
+        return {"status": None, "names": []}
+    return {"status": match.status, "names": sorted({e.name for e in match.entries})}
+
+
+def _report_to_dict(r) -> dict:
+    return {
+        "client": f"{r.client_endpoint[0]}:{r.client_endpoint[1]}",
+        "server": f"{r.server_endpoint[0]}:{r.server_endpoint[1]}",
+        "sni": r.client_hello.server_name if r.client_hello else None,
+        "ja3": {"string": r.ja3.ja3_string, "hash": r.ja3.ja3_hash, **_match_summary(r.ja3_match)}
+        if r.ja3
+        else None,
+        "ja4": {"string": r.ja4.ja4_string, **_match_summary(r.ja4_match)} if r.ja4 else None,
+        "ja3s": {
+            "string": r.ja3s.ja3s_string,
+            "hash": r.ja3s.ja3s_hash,
+            **_match_summary(r.ja3s_match),
+        }
+        if r.ja3s
+        else None,
+    }
+
+
 def _cmd_analyze(args: argparse.Namespace) -> int:
     db = FingerprintDatabase.load(args.db)
     reports = analyze_pcap(args.pcap, db=db)
@@ -32,39 +57,7 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         return 1
 
     if args.json:
-        payload = []
-        for r in reports:
-            payload.append(
-                {
-                    "client": f"{r.client_endpoint[0]}:{r.client_endpoint[1]}",
-                    "server": f"{r.server_endpoint[0]}:{r.server_endpoint[1]}",
-                    "sni": r.client_hello.server_name if r.client_hello else None,
-                    "ja3": r.ja3.ja3_string if r.ja3 else None,
-                    "ja3_hash": r.ja3.ja3_hash if r.ja3 else None,
-                    "ja3_match_status": r.ja3_match.status if r.ja3_match else None,
-                    "ja3_match_names": (
-                        sorted({e.name for e in r.ja3_match.entries})
-                        if r.ja3_match
-                        else []
-                    ),
-                    "ja3s": r.ja3s.ja3s_string if r.ja3s else None,
-                    "ja3s_hash": r.ja3s.ja3s_hash if r.ja3s else None,
-                    "ja3s_match_status": r.ja3s_match.status if r.ja3s_match else None,
-                    "ja3s_match_names": (
-                        sorted({e.name for e in r.ja3s_match.entries})
-                        if r.ja3s_match
-                        else []
-                    ),
-                    "ja4": r.ja4.ja4_string if r.ja4 else None,
-                    "ja4_match_status": r.ja4_match.status if r.ja4_match else None,
-                    "ja4_match_names": (
-                        sorted({e.name for e in r.ja4_match.entries})
-                        if r.ja4_match
-                        else []
-                    ),
-                }
-            )
-        print(json.dumps(payload, indent=2))
+        print(json.dumps([_report_to_dict(r) for r in reports], indent=2))
         return 0
 
     for i, report in enumerate(reports, start=1):
@@ -109,30 +102,12 @@ def _cmd_check_spoofing(args: argparse.Namespace) -> int:
     return 1 if verdict.is_suspicious else 0
 
 
-def _cmd_live(args: argparse.Namespace) -> int:
-    # Live capture needs raw-socket privileges (root) on macOS. We keep it
-    # optional per the project scope -- pcap analysis above is the primary,
-    # reproducible path. See docs/SETUP_MAC.md for the sudo requirement.
-    try:
-        from scapy.all import wrpcap, sniff
-    except ImportError:
-        print("scapy is required for live capture", file=sys.stderr)
-        return 1
-
-    print(f"Sniffing on {args.iface} for {args.count} TLS-looking packets... (Ctrl+C to stop)")
-    print("Note: this requires sudo on macOS. Run: sudo python -m tls_fingerprint.cli live ...")
-    packets = sniff(iface=args.iface, filter="tcp port 443", count=args.count)
-    wrpcap(args.out, packets)
-    print(f"Wrote {len(packets)} packets to {args.out}")
-    return 0
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="tls-fingerprint", description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
-    p_analyze = sub.add_parser("analyze", help="Analyze a PCAP file for JA3/JA3S")
-    p_analyze.add_argument("pcap", help="Path to a .pcap/.pcapng file")
+    p_analyze = sub.add_parser("analyze", help="Analyze a PCAP file for JA3/JA3S/JA4")
+    p_analyze.add_argument("pcap", help="Path to a .pcap file")
     p_analyze.add_argument("--db", default=str(DEFAULT_DB_PATH), help="Fingerprint DB JSON path")
     p_analyze.add_argument("--json", action="store_true", help="Output JSON instead of text")
     p_analyze.set_defaults(func=_cmd_analyze)
@@ -147,10 +122,10 @@ def build_parser() -> argparse.ArgumentParser:
     p_db_add = db_sub.add_parser("add", help="Add a measured fingerprint entry")
     p_db_add.add_argument("--db", default=str(DEFAULT_DB_PATH))
     p_db_add.add_argument("--hash", required=True)
-    p_db_add.add_argument("--type", required=True, choices=["ja3", "ja3s"])
+    p_db_add.add_argument("--type", required=True, choices=["ja3", "ja3s", "ja4"])
     p_db_add.add_argument("--name", required=True)
     p_db_add.add_argument("--category", required=True, choices=["client", "server"])
-    p_db_add.add_argument("--string", default=None, help="The full JA3/JA3S string")
+    p_db_add.add_argument("--string", default=None, help="The full fingerprint string")
     p_db_add.add_argument("--library", default=None)
     p_db_add.add_argument(
         "--source-type", default="measured", choices=["measured", "published_reference"]
@@ -164,16 +139,10 @@ def build_parser() -> argparse.ArgumentParser:
         "check-spoofing",
         help="Check whether a pcap's real JA3 matches a claimed client identity (bot detection)",
     )
-    p_spoof.add_argument("pcap", help="Path to a .pcap/.pcapng file")
+    p_spoof.add_argument("pcap", help="Path to a .pcap file")
     p_spoof.add_argument("--claims", required=True, help="Claimed identity, e.g. 'Chrome'")
     p_spoof.add_argument("--db", default=str(DEFAULT_DB_PATH))
     p_spoof.set_defaults(func=_cmd_check_spoofing)
-
-    p_live = sub.add_parser("live", help="Optional: live-capture TLS packets (needs sudo)")
-    p_live.add_argument("--iface", required=True)
-    p_live.add_argument("--count", type=int, default=20)
-    p_live.add_argument("--out", default=str(PROJECT_ROOT / "pcaps" / "live_capture.pcap"))
-    p_live.set_defaults(func=_cmd_live)
 
     return parser
 

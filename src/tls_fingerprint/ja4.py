@@ -1,21 +1,13 @@
 """JA4 fingerprint computation (client-side only; JA4, not JA4S/JA4H/...).
 
-Implements the JA4 spec exactly as published by FoxIO
-(https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md,
-fetched and followed field-by-field while writing this file -- nothing
-here is guessed). JA4 was designed specifically to fix two real weaknesses
-of JA3 that this project's own experiments ran into directly:
-
-  1. JA3 is order-sensitive for ciphers/extensions. Modern Chrome
-     randomizes ClientHello extension order per-connection specifically to
-     defeat this (see docs/STUDY_GUIDE.md sec 20) -- we reproduced this
-     live: the exact same real Chrome install produced two different JA3
-     hashes across two runs (see docs/EXPERIMENTS.md, "JA4 vs JA3" table).
-     JA4 sorts both the cipher list and the extension list before hashing,
-     so pure reordering no longer changes the fingerprint.
-  2. JA3's hash swallows everything into one opaque MD5 -- you can't tell
-     "TLS 1.3, 15 ciphers, has SNI" without decoding the hash. JA4's first
-     segment is human-readable on sight (e.g. "t13d1516h2").
+Implements the JA4 spec published by FoxIO
+(https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md).
+JA4 fixes JA3's biggest weakness: JA3 is order-sensitive, and Chrome
+randomizes its ClientHello extension order per connection specifically to
+defeat that -- we saw this happen live (same real Chrome, two runs, two
+different JA3 hashes; see docs/IMPLEMENTATION.md). JA4 sorts the cipher
+and extension lists before hashing, so pure reordering no longer changes
+the fingerprint.
 
 JA4 string shape (3 underscore-joined segments):
 

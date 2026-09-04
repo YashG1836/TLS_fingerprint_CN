@@ -1,19 +1,15 @@
-"""Experiment client: a from-scratch TLS ClientHello, built byte-by-byte
-with no TLS library at all (no `ssl` module, no OpenSSL binding) -- just a
-raw TCP socket. This is the "custom/other TLS implementation" experiment:
-it demonstrates that JA3 is purely a function of what bytes the client puts
-on the wire, and that we can make those bytes -- and therefore the JA3
-hash -- whatever we want by hand-assembling the ClientHello ourselves.
+"""The "custom TLS client" experiment: a ClientHello built byte-by-byte by
+hand, no TLS library at all (no `ssl` module, no OpenSSL). Proves JA3 is
+purely a function of the bytes on the wire -- we can make it whatever we
+want just by hand-assembling the ClientHello.
 
-We connect directly to a real server (no capture_proxy relay needed: this
-script already controls every byte it sends, and reads the real bytes the
-server sends back over a normal socket).
+Connects directly to a real server (no capture_proxy relay needed: this
+script already controls every byte it sends and reads the reply itself).
 
-We deliberately build a legacy-style TLS 1.2 ClientHello (no
-supported_versions/key_share extensions) so a real server will complete a
-plaintext-visible ServerHello + Certificate flight without us having to
-implement ECDHE key generation just to finish a TLS 1.3 handshake -- we
-only need the ServerHello for JA3S, not a fully established session.
+Uses a legacy TLS 1.2 ClientHello on purpose (no supported_versions/
+key_share) so a real server replies with a plaintext ServerHello without
+us needing to implement ECDHE key generation -- we only need the
+ServerHello for JA3S, not a full session.
 
 Usage:
     python experiments/custom_client.py example.com 443 pcaps/custom_client.pcap

@@ -1,183 +1,155 @@
-# TLS Fingerprinting with JA3/JA3S
+# TLS Fingerprinting (JA3 / JA3S / JA4)
 
-> **Feeling lost / want the plain-English version first?** Read
-> [`SIMPLE_GUIDE.md`](SIMPLE_GUIDE.md) — one page, no jargon, tells you
-> what this does, what to run, and what to present.
+A Computer Networks course project: a tool that reads TLS handshakes from
+`.pcap` files and identifies the client/server software from the
+*shape* of the handshake alone — no decryption involved.
 
-A passive TLS fingerprinting tool for a Computer Networks course project.
-It reads TLS handshake traffic from `.pcap` files, computes JA3 (client)
-and JA3S (server) fingerprints per the published Salesforce spec, and
-identifies the likely client/server software against a small, self-curated
-reference database — without decrypting anything, since the ClientHello
-and ServerHello messages TLS fingerprinting relies on are sent
-unencrypted by design.
+## Why this works
 
-New to the underlying networking/TLS concepts? Start with
-[`docs/STUDY_GUIDE.md`](docs/STUDY_GUIDE.md) — it teaches everything from
-IP addresses up through JA3/JA3S from zero.
+Right before HTTPS encryption kicks in, both sides send one message each
+in **plain text**:
 
-## Motivation
+- **ClientHello** — the client's TLS version, its list of ciphers, and a
+  list of extensions.
+- **ServerHello** — the server's reply: the version and cipher it picked.
 
-Firewalls and monitors increasingly see only encrypted traffic. JA3/JA3S
-turn the *unencrypted, structural* part of a TLS handshake — which
-ciphers a client offers, in what order, which extensions it includes —
-into a short, comparable hash, giving defenders a lightweight signal for
-client identification and anomaly/malware-C2 detection without breaking
-TLS's confidentiality guarantees anywhere.
+Different programs (Chrome, curl, Python, malware, a bot...) build this
+"hello" message slightly differently — different cipher order, different
+extensions. That difference is a fingerprint, and it's sitting in the
+open, before any encryption starts.
 
-## Architecture
+## What this project does
+
+1. **Reads a `.pcap`** (a recording of network traffic).
+2. **Finds the ClientHello / ServerHello** inside it.
+3. **Turns each one into a short hash** — using **JA3** (client) and
+   **JA3S** (server), the published fingerprinting standard.
+4. **Looks the hash up** in a small local database of fingerprints we
+   measured ourselves from 5 real programs.
+5. **Prints the result**: which client it's likely to be, or "unknown"
+   if we've never seen that hash before.
+
+On top of that base pipeline, this project adds two things that were
+built in direct response to something we discovered while testing:
+
+- **JA4** — a newer, improved fingerprint. We found that the *same real
+  Chrome browser*, run twice, produced two *different* JA3 hashes
+  (Chrome shuffles its handshake order on purpose to resist
+  fingerprinting). JA4 fixes this by sorting the fields before hashing —
+  we verified this fix on our own real data.
+- **Bot / spoofing detection** — a tool that catches a program lying
+  about its identity. A script can freely claim to be "Chrome" (that's
+  just a text header), but it can't as easily fake the actual TLS
+  handshake its real library produces. We built a checker that compares
+  the claim against the real fingerprint and flags the mismatch — this
+  is the real-world security use case for all of the above.
+
+## Everything is real, nothing is invented
+
+Every hash in this repo — in the database, in the docs, in the
+presentation — was computed from an actual network connection this
+project made to a real server (`example.com`). None of it is hardcoded
+or guessed. `docs/IMPLEMENTATION.md` shows exactly which commands
+produced which result.
+
+## Project layout
 
 ```
-PCAP file --> Packet Parser --> ClientHello/ServerHello --> JA3/JA3S Generator
-                                                                    |
-                                                                    v
-                        CLI Output <-- Fingerprint Matcher <-- Fingerprint Database
+src/tls_fingerprint/
+  parser.py             reads raw TLS bytes -> ClientHello / ServerHello fields
+  ja3.py, ja3s.py        turns a hello into a JA3 / JA3S hash
+  ja4.py                 turns a ClientHello into a JA4 fingerprint
+  database.py            the local JSON "known fingerprints" lookup
+  analyzer.py             wires the above together for one pcap
+  report.py, cli.py       command-line tool + printed output
+  spoofing_detector.py     compares a claimed identity against the real fingerprint
+  capture_proxy.py, pcap_write.py   used only to GENERATE real test traffic (see below)
+
+data/fingerprint_db.json   15 real, measured fingerprints (5 clients x JA3/JA3S/JA4)
+pcaps/                     the actual recordings used for every result in this repo
+experiments/                scripts that generated those recordings
+tests/                      56 automated tests
+docs/
+  IMPLEMENTATION.md          run this live to present the project (start here for a demo)
+  STUDY_GUIDE.md              networking/TLS concepts from zero
+  VIVA.md                      likely viva questions, short answers
+  PROJECT_REPORT.md            formal write-up
 ```
 
-| Module | Responsibility |
-|---|---|
-| `src/tls_fingerprint/parser.py` | TCP stream reassembly + raw TLS record/handshake byte parsing |
-| `src/tls_fingerprint/ja3.py` / `ja3s.py` | JA3/JA3S string construction + MD5 hashing |
-| `src/tls_fingerprint/database.py` | JSON-backed reference database + known/possible/unknown lookup |
-| `src/tls_fingerprint/analyzer.py` | Orchestrates pcap → flows → hellos → JA3/JA3S → DB lookup |
-| `src/tls_fingerprint/cli.py` / `report.py` | Command-line interface + human-readable output |
-| `src/tls_fingerprint/capture_proxy.py` | Root-free relay used only to *generate* real experiment traffic |
-| `src/tls_fingerprint/ja4.py` | JA4 (client) — spec-verified against FoxIO's own worked examples |
-| `src/tls_fingerprint/spoofing_detector.py` | Flags a client whose claimed identity doesn't match its real TLS fingerprint |
-
-## Features
-
-- Analyze any `.pcap`/`.pcapng` file — no elevated privileges needed
-- RFC-faithful JA3 and JA3S computation, including RFC 8701 GREASE
-  stripping
-- **JA4** (client) alongside JA3 — spec-verified reorder-resistant
-  fingerprint; see `docs/EXPERIMENTS.md` Experiment 6 for a real
-  before/after where it stayed stable while JA3 didn't
-- **Bot/spoofing detection** (`check-spoofing`) — flags a client that
-  claims one identity (e.g. via `User-Agent`) while its real TLS
-  fingerprint matches something else entirely; see `docs/EXPERIMENTS.md`
-  Experiment 7
-- Local JSON reference database with `known` / `possible` (ambiguous) /
-  `unknown` match reporting — never silently guesses
-- Text or JSON CLI output
-- Optional live capture (needs `sudo` on macOS — see `docs/SETUP_MAC.md`)
-- Root-free traffic-generation tooling (`capture_proxy.py`) used to build
-  5 real, distinct client fingerprints for this project's own reference
-  database — see `docs/EXPERIMENTS.md`
-
-## Installation
+## Setup (macOS)
 
 ```bash
-git clone <this repo>
-cd CN_tls_fingerprint
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
 pip install pytest
 ```
 
-Full step-by-step macOS instructions (including common permission
-gotchas): [`docs/SETUP_MAC.md`](docs/SETUP_MAC.md).
+macOS needs `sudo` to sniff live network packets, which isn't available
+in an automated environment — so this project generates real traffic
+through a small relay (`capture_proxy.py`) instead of a raw packet
+capture. It forwards every byte untouched to the real server (the
+handshake and certificate check are fully real), while also saving a
+copy as a `.pcap`. See `docs/IMPLEMENTATION.md` for exact commands.
 
-## Quick Start
+## Quick start
 
 ```bash
-tls-fingerprint analyze pcaps/curl.pcap
+pytest                                   # 56 tests should pass
+tls-fingerprint db list                  # the known-fingerprint database
+tls-fingerprint analyze pcaps/curl.pcap  # identify a real capture
 ```
 
-## Example Output
-
-Real output from `tls-fingerprint analyze pcaps/curl.pcap` (a genuine
-curl → example.com handshake, see `docs/EXPERIMENTS.md`):
-
+Example output:
 ```
-Flow
---------------------------------
-Source:      127.0.0.1:49187
-Destination: 104.20.23.154:443
-SNI:         example.com
-
-TLS
---------------------------------
-Version: TLS 1.3
-
-JA3 (client)
---------------------------------
-String: 771,4867-4866-4865-52393-...-255,43-51-0-11-10-13-16,29-23-24-25,0
-Hash:   375c6162a492dfbf2795909110ce8424
-
 Client Identification
 --------------------------------
 Likely Client: curl 8.7.1 (macOS system, SecureTransport/LibreSSL)
 Match:         Known match (reference database)
-
-JA3S (server)
---------------------------------
-String: 771,4867,51-43
-Hash:   d75f9129bb5d05492a65ff78e081bcb2
-
-Server Identification
---------------------------------
-Likely Server Stack: Cloudflare edge (fronting example.com)
-Match:               Known match (reference database)
 ```
 
-## Experiments
+**For the full live demo** (5 clients, the JA3-vs-JA4 comparison, bot
+detection) — everything is scripted step by step in
+[`docs/IMPLEMENTATION.md`](docs/IMPLEMENTATION.md).
 
-Five genuinely different real TLS clients were captured and fingerprinted
-— curl, OpenSSL, Python's stdlib `ssl`, headless Chrome, and a hand-built
-raw-socket ClientHello with no TLS library at all — producing **five
-distinct JA3 hashes**, including two clients sharing the exact same
-underlying crypto library. Exact commands, real command output, and
-discussion: [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md).
+## Results, in one table
 
-Two further real experiments build on those five: a same-Chrome,
-two-runs comparison showing JA4 stayed stable where JA3 didn't, and a
-bot-detection demo where a script lying about being Chrome (via a
-spoofed `User-Agent`) gets caught — 5/5 flagged even under a burst of
-requests. See `docs/EXPERIMENTS.md` Experiments 6–7.
+Five different real programs, same real server, five different JA3
+hashes:
 
-Rebuild the reference database from the captured pcaps at any time:
-```bash
-python experiments/build_reference_db.py
-```
+| Client | TLS library | JA3 hash |
+|---|---|---|
+| curl 8.7.1 | SecureTransport / LibreSSL | `375c6162a492…ce8424` |
+| openssl s_client 3.6.2 | OpenSSL 3.6.2 | `0b85eb0d4981…f0ac5f` |
+| Python stdlib `ssl` | OpenSSL 3.6.2 (**same library as above**) | `f21f8e6cf70d…ef401c` |
+| Google Chrome 151 | BoringSSL | `81a2542af844…f2a626` |
+| Hand-built ClientHello | none — raw socket | `c53113116bb0…6fedc9` |
+
+curl and openssl/Python share nothing; openssl and Python share the
+*exact same* crypto library and still fingerprint differently — proof
+JA3 reflects configuration, not just which library is linked.
+
+## Limitations (read before trusting a match)
+
+- **Same hash ≠ same software.** Two unrelated programs on the same
+  library/config get the same JA3. The database reports this honestly
+  as `possible`, never a silent guess.
+- **JA3S depends on the client, too** — two of our own clients got an
+  identical JA3S against the same server.
+- **GREASE and handshake-order randomization actively fight this.**
+  Chrome shuffles its own ClientHello on purpose (we caught it live —
+  see `docs/IMPLEMENTATION.md`).
+- **It's evadable.** Since the fingerprint is entirely client-controlled
+  bytes, anyone can copy another program's exact signature.
+- **A fingerprint is a hint, never proof.** Nothing here decrypts
+  anything or claims certainty.
 
 ## Testing
 
 ```bash
 pytest
 ```
-56 tests: JA3/JA3S string construction (checked against hand-derived
-expected values), JA4 string construction (checked against the *official
-FoxIO spec's own worked examples*), parser edge cases, database lookup
-semantics, spoofing-detector logic, report formatting, and an end-to-end
-integration test through a synthetic pcap.
-
-## Limitations
-
-TLS fingerprinting is a hint, not proof of identity. See
-[`docs/STUDY_GUIDE.md` §20](docs/STUDY_GUIDE.md#20-limitations-randomization-and-evasion--read-this-carefully)
-and [`docs/PROJECT_REPORT.md` §9](docs/PROJECT_REPORT.md#9-limitations)
-for the full discussion — in short: identical JA3 doesn't imply identical
-software, JA3S depends on the client it's responding to, GREASE and
-(in modern Chrome) extension-order randomization actively work against
-fingerprint stability, and any client can trivially mimic another's
-fingerprint since it's entirely client-controlled bytes.
-
-## Future Work / Stretch Goals
-
-Not implemented in this MVP by design — see `docs/PROJECT_REPORT.md` §10:
-JA4/JA4S, a larger cross-platform reference database, verified
-non-headless browser capture, and (Linux-only) eBPF/XDP-based capture.
-
-## Documentation Index
-
-- [`SIMPLE_GUIDE.md`](SIMPLE_GUIDE.md) — start here if anything feels too complicated
-- [`docs/BIG_PICTURE.md`](docs/BIG_PICTURE.md) — why this project, what's the catch, what came before/after JA3
-- [`docs/CODE_FLOW.md`](docs/CODE_FLOW.md) — which file/function runs when, for one real command end to end
-- [`docs/STUDY_GUIDE.md`](docs/STUDY_GUIDE.md) — CN/TLS/JA3 from zero
-- [`docs/SETUP_MAC.md`](docs/SETUP_MAC.md) — macOS setup, step by step
-- [`docs/EXPERIMENTS.md`](docs/EXPERIMENTS.md) — reproducible experiment commands
-- [`docs/VIVA.md`](docs/VIVA.md) — 40 likely viva Q&A
-- [`docs/PROJECT_REPORT.md`](docs/PROJECT_REPORT.md) — full report
-- [`PROJECT_STATUS.md`](PROJECT_STATUS.md) — requirement-by-requirement status
+56 tests: JA3/JA3S checked against hand-derived expected values, JA4
+checked against the *official FoxIO spec's own worked examples*, parser
+edge cases, database lookup logic, spoofing-detector logic, and an
+end-to-end pcap-to-result integration test.

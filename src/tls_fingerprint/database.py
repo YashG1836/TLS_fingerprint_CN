@@ -2,9 +2,9 @@
 
 Every entry in data/fingerprint_db.json is something WE actually measured
 on this machine (source_type "measured") -- we do not ship invented
-"published" hashes. See docs/EXPERIMENTS.md for how each entry was produced
-and docs/STUDY_GUIDE.md for why a JA3 hash is a strong hint, not proof, of
-client identity.
+"published" hashes. See docs/IMPLEMENTATION.md for how each entry was
+produced and docs/STUDY_GUIDE.md for why a JA3 hash is a strong hint, not
+proof, of client identity.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ VALID_SOURCE_TYPES = {"measured", "published_reference"}
 @dataclass
 class FingerprintEntry:
     hash: str
-    fingerprint_type: str  # "ja3" | "ja3s"
+    fingerprint_type: str  # "ja3" | "ja3s" | "ja4"
     name: str
     category: str  # "client" | "server"
     fingerprint_string: str | None = None

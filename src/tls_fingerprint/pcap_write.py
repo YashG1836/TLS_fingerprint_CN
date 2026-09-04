@@ -1,13 +1,11 @@
 """Write raw captured TLS handshake bytes out as a synthetic-but-real PCAP.
 
-Used by capture_proxy.py and the raw-socket custom client experiment: both
-capture genuine TLS bytes exchanged with a real server, just not via a NIC
-promiscuous-mode tap (which needs root on macOS). We wrap the real bytes in
-hand-built Ethernet/IP/TCP headers so downstream tooling (analyzer.py, the
-CLI, Wireshark) sees an ordinary-looking pcap. This does NOT fabricate any
-handshake content -- only the link-layer framing around real bytes is
-synthetic. Every pcap produced this way is documented as such in
-data/fingerprint_db.json and docs/EXPERIMENTS.md.
+Used by capture_proxy.py and the raw-socket custom client: both capture
+genuine TLS bytes exchanged with a real server, just not via a NIC
+promiscuous-mode tap (which needs root on macOS). We wrap the real bytes
+in hand-built Ethernet/IP/TCP headers so downstream tooling (analyzer.py,
+the CLI, Wireshark) sees an ordinary pcap. Only the link-layer framing is
+synthetic -- the handshake content is exactly what was really sent.
 """
 
 from __future__ import annotations
