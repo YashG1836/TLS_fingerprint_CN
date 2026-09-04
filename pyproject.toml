@@ -12,7 +12,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0.0"]
+dev = [
+    "pytest>=8.0.0",
+]
+
+presentation = [
+    "python-pptx>=1.0.2",
+]
 
 [project.scripts]
 tls-fingerprint = "tls_fingerprint.cli:main"
