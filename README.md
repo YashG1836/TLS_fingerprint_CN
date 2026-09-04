@@ -35,8 +35,13 @@ built in direct response to something we discovered while testing:
 - **JA4** — a newer, improved fingerprint. We found that the *same real
   Chrome browser*, run twice, produced two *different* JA3 hashes
   (Chrome shuffles its handshake order on purpose to resist
-  fingerprinting). JA4 fixes this by sorting the fields before hashing —
-  we verified this fix on our own real data.
+  fingerprinting). JA4 sorts the cipher and extension lists before
+  hashing, so we checked both runs against it: the cipher-hash segment
+  came out byte-for-byte identical, exactly what sorting is supposed to
+  guarantee. The extension-count segment legitimately changed (16 → 17)
+  because the second run genuinely sent one extra extension — JA4
+  isolates that as a real difference instead of hiding it behind one
+  opaque hash the way JA3 does.
 - **Bot / spoofing detection** — a tool that catches a program lying
   about its identity. A script can freely claim to be "Chrome" (that's
   just a text header), but it can't as easily fake the actual TLS
@@ -65,10 +70,11 @@ src/tls_fingerprint/
   spoofing_detector.py     compares a claimed identity against the real fingerprint
   capture_proxy.py, pcap_write.py   used only to GENERATE real test traffic (see below)
 
-data/fingerprint_db.json   15 real, measured fingerprints (5 clients x JA3/JA3S/JA4)
+data/fingerprint_db.json   15 real, measured entries (5 clients x JA3/JA3S/JA4; 14 distinct
+                           fingerprints -- two clients legitimately share one JA3S, see below)
 pcaps/                     the actual recordings used for every result in this repo
 experiments/                scripts that generated those recordings
-tests/                      56 automated tests
+tests/                      59 automated tests
 docs/
   IMPLEMENTATION.md          run this live to present the project (start here for a demo)
   STUDY_GUIDE.md              networking/TLS concepts from zero
@@ -95,7 +101,7 @@ copy as a `.pcap`. See `docs/IMPLEMENTATION.md` for exact commands.
 ## Quick start
 
 ```bash
-pytest                                   # 56 tests should pass
+pytest                                   # 59 tests should pass
 tls-fingerprint db list                  # the known-fingerprint database
 tls-fingerprint analyze pcaps/curl.pcap  # identify a real capture
 ```
@@ -149,7 +155,7 @@ JA3 reflects configuration, not just which library is linked.
 ```bash
 pytest
 ```
-56 tests: JA3/JA3S checked against hand-derived expected values, JA4
+59 tests: JA3/JA3S checked against hand-derived expected values, JA4
 checked against the *official FoxIO spec's own worked examples*, parser
 edge cases, database lookup logic, spoofing-detector logic, and an
 end-to-end pcap-to-result integration test.
