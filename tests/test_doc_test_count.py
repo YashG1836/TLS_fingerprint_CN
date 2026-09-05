@@ -1,10 +1,9 @@
-"""Guards against the test count stated in README.md, the docs, the
-presentation script and the screenshot explanations drifting from what
-pytest actually collects -- the same kind of drift tests/test_reference_db.py
-guards against, just for the suite's own size instead of the fingerprint
-database. Re-collects the whole suite fresh on every run (this file
-included) so the figure checked here is never stale from its own
-addition."""
+"""Guards against the test count stated in README.md, the docs, and the
+screenshot explanations drifting from what pytest actually collects --
+the same kind of drift tests/test_reference_db.py guards against, just
+for the suite's own size instead of the fingerprint database. Re-collects
+the whole suite fresh on every run (this file included) so the figure
+checked here is never stale from its own addition."""
 
 import re
 import subprocess
@@ -17,8 +16,7 @@ DOC_FILES = [
     ROOT / "README.md",
     ROOT / "docs" / "IMPLEMENTATION.md",
     ROOT / "docs" / "PROJECT_REPORT.md",
-    ROOT / "Implementation" / "EXPLANATIONS.txt",
-    ROOT / "experiments" / "build_presentation.py",
+    ROOT / "screenshots" / "EXPLANATIONS.md",
 ]
 
 _STATED_COUNT_RE = re.compile(r"(\d+)\s+(?:automated\s+)?tests?\b|(\d+)\s+passed\b")
